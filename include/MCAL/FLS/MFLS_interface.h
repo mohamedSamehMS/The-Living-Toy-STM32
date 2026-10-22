@@ -12,7 +12,7 @@
  *    - SECTOR erase only. No mass erase, no option bytes (write-
  *      protecting the future bootloader sector via OPTCR is a later
  *      hardening step).
- *    - Polling only — this driver arms NO interrupt source.
+ *    - Polling only â€” this driver arms NO interrupt source.
  *      MNVIC_FLASH (position 4) exists in the MNVIC enum and stays
  *      reserved for a possible future EOP-interrupt variant.
  *    - No Init function: the driver is stateless (MGPIO precedent).
@@ -22,17 +22,17 @@
  *    - ACR is never written: MRCC owns LATENCY/PRFTEN.
  *
  *  CALLING CONTRACTS:
- *    - Thread context ONLY — never call MFLS from an ISR (the
+ *    - Thread context ONLY â€” never call MFLS from an ISR (the
  *      unlock -> program -> wait sequence must not interleave).
  *    - Single context: concurrent MFLS calls from two loops are not
  *      supported (v1 has no scheduler).
  *    - Erase the sector before programming it. With the config
  *      check enabled, writing non-erased words is rejected loudly
- *      (MFLS_NOT_ERASED) — programming only clears bits (1->0).
+ *      (MFLS_NOT_ERASED) â€” programming only clears bits (1->0).
  *
  *  THE STALL CONTRACT (single bank, no read-while-write):
  *    While any erase/program runs, every FLASH-resident instruction
- *    fetch stalls the core until it completes. Consequences — all
+ *    fetch stalls the core until it completes. Consequences â€” all
  *    expected, all documented:
  *      - a sector erase visibly freezes the whole board for the
  *        erase duration (~0.5 s for 16 KB, ~2 s for the 128 KB
@@ -41,12 +41,12 @@
  *      - interrupts pending during a stall fire late (coalesced),
  *        they are not lost.
  *      - the polling loops in this driver are themselves stalled
- *        during a legitimate operation — the timeout bound therefore
+ *        during a legitimate operation â€” the timeout bound therefore
  *        guards post-operation pathological states (BSY stuck,
  *        error-locked controller), not the operation itself.
  *
  *  Revision history:
- *    Rev 1 — initial four-file set (FOTA seat)
+ *    Rev 1 â€” initial four-file set (FOTA seat)
  *
  *  Created on: (set on first commit)
  *      Author: Mohamed Sameh (drafted with the FOTA Seat AI session)
@@ -58,47 +58,47 @@
 #include "STD_TYPES.h"
 
 /* =====================================================================
- *  Driver status codes — same convention as MRCC/MGPIO/MNVIC
+ *  Driver status codes â€” same convention as MRCC/MGPIO/MNVIC
  * ===================================================================== */
 typedef enum
 {
     MFLS_OK = 0,              /* Operation completed                       */
     MFLS_INVALID_SECTOR,      /* Sector id outside the supported set       */
     MFLS_PROTECTED_SECTOR,    /* Sector exists but is outside this build's
-                                 writable window (MFLS_config.h) — the
+                                 writable window (MFLS_config.h) â€” the
                                  bootloader sector cannot be erased by an
                                  app-build binary, by design              */
     MFLS_INVALID_PARAM,       /* NULL pointer, zero word count, or an
                                  address that is not 4-byte aligned       */
     MFLS_INVALID_ADDRESS,     /* Address outside the 256 KB flash array    */
-    MFLS_NOT_ERASED,          /* Target word(s) do not read 0xFFFFFFFF —
+    MFLS_NOT_ERASED,          /* Target word(s) do not read 0xFFFFFFFF â€”
                                  programming would corrupt silently;
                                  nothing was written (config-gated)       */
     MFLS_BUSY,                /* Controller BSY already set on entry       */
     MFLS_TIMEOUT,             /* BSY never cleared within the derived
                                  bound (MFLS_config.h)                    */
-    MFLS_LOCKED,              /* Unlock failed — a wrong key was written
+    MFLS_LOCKED,              /* Unlock failed â€” a wrong key was written
                                  somewhere earlier: the controller stays
                                  locked until the next RESET. Power-cycle
                                  and investigate before retrying          */
     MFLS_WRITE_ERROR          /* SR error flags were set (WRPERR/PGAERR/
-                                 PGPERR/OPERR...) — flags are cleared
+                                 PGPERR/OPERR...) â€” flags are cleared
                                  before returning so the next operation
                                  starts from a clean SR                   */
 } MFLS_ReturnType_t;
 
 /* =====================================================================
- *  Sector identifier — values are indices into the internal sector
+ *  Sector identifier â€” values are indices into the internal sector
  *  table and MUST stay 0..5 in order (MGPIO_Pin_t pattern).
  * ===================================================================== */
 typedef enum
 {
-    MFLS_SECTOR_0 = 0,        /* 16 KB  : 0x08000000 — future bootloader  */
-    MFLS_SECTOR_1,            /* 16 KB  : 0x08004000 — app region start   */
+    MFLS_SECTOR_0 = 0,        /* 16 KB  : 0x08000000 â€” future bootloader  */
+    MFLS_SECTOR_1,            /* 16 KB  : 0x08004000 â€” app region start   */
     MFLS_SECTOR_2,            /* 16 KB  : 0x08008000                      */
     MFLS_SECTOR_3,            /* 16 KB  : 0x0800C000                      */
-    MFLS_SECTOR_4,            /* 64 KB  : 0x08010000 — app region end     */
-    MFLS_SECTOR_5             /* 128 KB : 0x08020000 — FOTA staging       */
+    MFLS_SECTOR_4,            /* 64 KB  : 0x08010000 â€” app region end     */
+    MFLS_SECTOR_5             /* 128 KB : 0x08020000 â€” FOTA staging       */
 } MFLS_Sector_t;
 
 /* =====================================================================
@@ -116,11 +116,11 @@ MFLS_ReturnType_t MFLS_EraseSector(MFLS_Sector_t Copy_Sector);
  *   - address must be 4-byte aligned; the whole run must lie inside
  *     the build's writable window
  *   - with the config check on, every target word must read
- *     0xFFFFFFFF beforehand — the check runs BEFORE the controller
+ *     0xFFFFFFFF beforehand â€” the check runs BEFORE the controller
  *     is unlocked, so a rejected call writes nothing at all
  *   - PG + PSIZE(x32) are set once per call; each word is one store,
  *     one BSY wait, one EOP/error check-and-clear
- * Reading programmed data afterwards is a plain memory access — no
+ * Reading programmed data afterwards is a plain memory access â€” no
  * read API exists because flash is memory-mapped (see example). */
 MFLS_ReturnType_t MFLS_ProgramWords(u32 Copy_u32Address,
                                     const u32 *Copy_pu32Data,
@@ -140,7 +140,7 @@ MFLS_ReturnType_t MFLS_GetSectorOfAddress(u32 Copy_u32Address,
 
 
 /* Debug/verification aid: raw FLASH_SR value captured just before the
-   last status clear — the flags the most recent completed operation
+   last status clear â€” the flags the most recent completed operation
    left behind. Read IMMEDIATELY after an MFLS call returns; the next
    operation's pre-clear overwrites it. Bit map: 0=EOP, 1=SOP,
    4=WRPERR, 5=PGAERR, 6=PGPERR, 7=PGSERR, 16=BSY. */

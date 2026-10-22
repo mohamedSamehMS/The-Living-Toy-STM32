@@ -15,18 +15,18 @@
  *     entire configuration lands, or nothing is written and a status
  *     code returns.
  *
- *  2. CONCURRENCY CONTRACT — two classes of function:
+ *  2. CONCURRENCY CONTRACT â€” two classes of function:
  *     - VALUE functions (SetPinValue / WritePins / SetPortValue):
- *       exactly ONE register store each (BSRR, or a full ODR word) —
+ *       exactly ONE register store each (BSRR, or a full ODR word) â€”
  *       atomic, safe to call from ISRs, safe against ISRs writing the
  *       same port from another context. There is deliberately NO
- *       read-modify-write on the value path — the old ODR
+ *       read-modify-write on the value path â€” the old ODR
  *       SET_BIT/CLR_BIT version was a lost-update race.
  *     - CONFIG functions (SetPinMode / SetPinOutputConfig / SetPinPull
  *       / SetPinAltFunction): read-modify-write of this pin's 1/2/4-bit
  *       field inside MODER / OTYPER / OSPEEDR / PUPDR / AFR. Two
  *       contexts RECONFIGURING the same port simultaneously is not
- *       supported — pin configuration is an init-time operation.
+ *       supported â€” pin configuration is an init-time operation.
  *       Value-writing interrupts never touch these registers, so the
  *       Project 4 pattern (EXTI ISR toggling LED pins while the game
  *       loop runs) stays race-free.
@@ -35,20 +35,20 @@
  *
  *  3. PACKAGE VALIDITY EVERYWHERE
  *     The valid-pin masks from MGPIO_config.h are enforced in EVERY
- *     function. The old driver enforced them in 2 of 8 — which let
+ *     function. The old driver enforced them in 2 of 8 â€” which let
  *     SetAlternateFunctionCONFIG remap PA13/PA14 and silently kill
  *     the SWD debug connection.
  *
  *  4. UNSIGNED SHIFTS ONLY
  *     Every shift operates on u-suffixed / u32-cast operands. Pin 15
- *     drives masks up to bit 31 — the old signed-shift expressions
+ *     drives masks up to bit 31 â€” the old signed-shift expressions
  *     (0b11 << 30, 0b1111 << 28, 1 << 31) were undefined behavior.
  *
  *  DEPENDENCY: MRCC_EnablePeripheralClock(MRCC_GPIOx) must have run
- *  before any call here — writes to an un-clocked port are silently
+ *  before any call here â€” writes to an un-clocked port are silently
  *  ignored by the hardware. No error, nothing happens.
  *
- *  NOTE — replaces GPIO_program.c. Includes reference the renamed
+ *  NOTE â€” replaces GPIO_program.c. Includes reference the renamed
  *  headers (MGPIO_interface.h, single 'e'; MGPIO_private.h /
  *  MGPIO_config.h with the MGPIO_ prefix).
  *
@@ -69,7 +69,7 @@
  *  values EQUAL the hardware field encodings, so this file writes
  *  them into registers untranslated. These checks turn a future
  *  silent reordering of any enum into a BUILD BREAK instead of a
- *  register corruption. (_Static_assert needs C11 — the GCC default;
+ *  register corruption. (_Static_assert needs C11 â€” the GCC default;
  *  on an older toolchain swap for the negative-array typedef trick.)
  * ===================================================================== */
 _Static_assert(MGPIO_MODE_INPUT       == 0, "MODER: INPUT must encode 00");
@@ -82,7 +82,7 @@ _Static_assert(MGPIO_SPEED_LOW        == 0, "OSPEEDR: LOW must encode 00");
 _Static_assert(MGPIO_SPEED_VERY_HIGH  == 3, "OSPEEDR: VERY_HIGH must encode 11");
 _Static_assert(MGPIO_NO_PULL          == 0, "PUPDR: no-pull must encode 00");
 _Static_assert(MGPIO_PULL_UP          == 1, "PUPDR: pull-up must encode 01");
-_Static_assert(MGPIO_PULL_DOWN        == 2, "PUPDR: pull-down must encode 10 — 11 is RESERVED");
+_Static_assert(MGPIO_PULL_DOWN        == 2, "PUPDR: pull-down must encode 10 - 11 is RESERVED");
 _Static_assert(MGPIO_PIN_LOW == 0 && MGPIO_PIN_HIGH == 1, "pin value encodings");
 _Static_assert(MGPIO_PIN_0 == 0 && MGPIO_PIN_15 == 15,    "pin enum must equal pin number");
 _Static_assert(MGPIO_PORTA == 0 && MGPIO_PORTC == 2,      "port enum must equal table index");
@@ -103,7 +103,7 @@ static volatile MGPIO_Registers_t * const MGPIO_PortTable[] =
     [MGPIO_PORTC] = MGPIO_GPIOC
 };
 
-/* Per-package pin availability (from MGPIO_config.h — a board fact).
+/* Per-package pin availability (from MGPIO_config.h â€” a board fact).
    Bit N set = pin N exists on this package and may be used. */
 static const u16 MGPIO_AvailablePins[] =
 {
@@ -116,13 +116,13 @@ static const u16 MGPIO_AvailablePins[] =
  *  Private helpers
  * ===================================================================== */
 
-/* Validate port id, pin number, and package availability — used by
+/* Validate port id, pin number, and package availability â€” used by
    every pin-addressed public function.
 
    The (u32) casts BEFORE each comparison matter: C enums are not
    type-safe, and a garbage value cast in from a negative int passes a
    plain "value > MAX" test when the enum's underlying type is signed
-   — and would then index the tables out of bounds. In u32 arithmetic,
+   â€” and would then index the tables out of bounds. In u32 arithmetic,
    (u32)(-1) is huge and fails the range check. */
 static MGPIO_ReturnType_t MGPIO_privateValidatePortPin(MGPIO_Port_t Copy_Port, MGPIO_Pin_t Copy_Pin)
 {
@@ -136,12 +136,12 @@ static MGPIO_ReturnType_t MGPIO_privateValidatePortPin(MGPIO_Port_t Copy_Port, M
     }
     if ((MGPIO_AvailablePins[Copy_Port] & (1u << Copy_Pin)) == 0u)
     {
-        return MGPIO_INVALID_PIN;   /* legal number — absent on package */
+        return MGPIO_INVALID_PIN;   /* legal number â€” absent on package */
     }
     return MGPIO_OK;
 }
 
-/* Validate port id only — for the whole-port functions. */
+/* Validate port id only â€” for the whole-port functions. */
 static MGPIO_ReturnType_t MGPIO_privateValidatePort(MGPIO_Port_t Copy_Port)
 {
     if ((u32)Copy_Port > (u32)MGPIO_PORTC)
@@ -155,7 +155,7 @@ static MGPIO_ReturnType_t MGPIO_privateValidatePort(MGPIO_Port_t Copy_Port)
  *  MGPIO_SetPinMode
  *
  *  Writes the pin's 2-bit MODER field: input / output / alternate
- *  function / analog. Call this FIRST for a pin — before output
+ *  function / analog. Call this FIRST for a pin â€” before output
  *  config, pull, or AF selection.
  *
  *  With MGPIO_ANALOG_MODE_CLEARS_PULL = 1 (config), selecting ANALOG
@@ -163,7 +163,7 @@ static MGPIO_ReturnType_t MGPIO_privateValidatePort(MGPIO_Port_t Copy_Port)
  *  burns current and can distort the analog level (RM0368 recommends
  *  no-pull for analog pins).
  *
- *  ANALOG is also the correct mode for UNUSED pins — lowest power and
+ *  ANALOG is also the correct mode for UNUSED pins â€” lowest power and
  *  no floating-input noise (the reset default is input-floating).
  * ===================================================================== */
 MGPIO_ReturnType_t MGPIO_SetPinMode(MGPIO_Port_t Copy_Port, MGPIO_Pin_t Copy_Pin,
@@ -177,7 +177,7 @@ MGPIO_ReturnType_t MGPIO_SetPinMode(MGPIO_Port_t Copy_Port, MGPIO_Pin_t Copy_Pin
         return Local_ReturnStatus;
     }
 
-    /* Enums are not type-safe — garbage values compile. Range-check
+    /* Enums are not type-safe â€” garbage values compile. Range-check
        BEFORE the register write. (Encoding equality is guarded by the
        _Static_asserts at the top of this file.) */
     if ((u32)Copy_Mode > (u32)MGPIO_MODE_ANALOG)
@@ -206,12 +206,12 @@ MGPIO_ReturnType_t MGPIO_SetPinMode(MGPIO_Port_t Copy_Port, MGPIO_Pin_t Copy_Pin
  *  MGPIO_SetPinOutputConfig
  *
  *  Writes OTYPER + OSPEEDR for one pin. Meaningful in OUTPUT mode AND
- *  in ALT_FUNC mode — alternate functions drive the pin through this
+ *  in ALT_FUNC mode â€” alternate functions drive the pin through this
  *  same output stage (SPI MOSI wants push-pull; I2C AF pins want
  *  open-drain). While the pin is INPUT/ANALOG, both settings are
  *  latched but have no effect.
  *
- *  BOTH parameters are validated BEFORE any write — the old driver
+ *  BOTH parameters are validated BEFORE any write â€” the old driver
  *  wrote OSPEEDR even when the output type was invalid, leaving a
  *  half-applied configuration.
  * ===================================================================== */
@@ -238,11 +238,11 @@ MGPIO_ReturnType_t MGPIO_SetPinOutputConfig(MGPIO_Port_t Copy_Port, MGPIO_Pin_t 
 
     Local_pu32Port = MGPIO_PortTable[Copy_Port];
 
-    /* OTYPER: 1 bit per pin — 0 push-pull, 1 open-drain */
+    /* OTYPER: 1 bit per pin â€” 0 push-pull, 1 open-drain */
     Local_pu32Port->OTYPER = (Local_pu32Port->OTYPER & ~MGPIO_OTYPER_MASK(Copy_Pin))
                            | ((u32)Copy_OutputType << (u32)Copy_Pin);
 
-    /* OSPEEDR: 2 bits per pin — slew/drive strength. Low speed for
+    /* OSPEEDR: 2 bits per pin â€” slew/drive strength. Low speed for
        LEDs and slow control lines (less EMI); high/very-high for the
        SPI-to-TFT and USART pins later. */
     Local_pu32Port->OSPEEDR = (Local_pu32Port->OSPEEDR & ~MGPIO_OSPEEDR_MASK(Copy_Pin))
@@ -254,7 +254,7 @@ MGPIO_ReturnType_t MGPIO_SetPinOutputConfig(MGPIO_Port_t Copy_Port, MGPIO_Pin_t 
 /* =====================================================================
  *  MGPIO_SetPinPull
  *
- *  Writes the pin's 2-bit PUPDR field — valid in ANY pin mode, not
+ *  Writes the pin's 2-bit PUPDR field â€” valid in ANY pin mode, not
  *  only input (the old name, SetInputCONFIG, implied input-only):
  *    - INPUT        : defines the idle level of a floating line
  *    - OUTPUT / AF  : internal pull usable on open-drain-style lines
@@ -280,7 +280,7 @@ MGPIO_ReturnType_t MGPIO_SetPinPull(MGPIO_Port_t Copy_Port, MGPIO_Pin_t Copy_Pin
 
     Local_pu32Port = MGPIO_PortTable[Copy_Port];
 
-    /* PUPDR, 2 bits/pin — enum values are the field encodings */
+    /* PUPDR, 2 bits/pin â€” enum values are the field encodings */
     Local_pu32Port->PUPDR = (Local_pu32Port->PUPDR & ~MGPIO_PUPDR_MASK(Copy_Pin))
                           | ((u32)Copy_Pull << ((u32)Copy_Pin * 2u));
 
@@ -295,8 +295,8 @@ MGPIO_ReturnType_t MGPIO_SetPinPull(MGPIO_Port_t Copy_Port, MGPIO_Pin_t Copy_Pin
  *  only while MODER = ALT_FUNC, but it may be programmed before or
  *  after the mode switch.
  *
- *  PA13/PA14 (SWDIO/SWCLK) never reach this function — the config
- *  pin mask rejects them with MGPIO_INVALID_PIN — so no call can
+ *  PA13/PA14 (SWDIO/SWCLK) never reach this function â€” the config
+ *  pin mask rejects them with MGPIO_INVALID_PIN â€” so no call can
  *  silently disconnect the debugger.
  * ===================================================================== */
 MGPIO_ReturnType_t MGPIO_SetPinAltFunction(MGPIO_Port_t Copy_Port, MGPIO_Pin_t Copy_Pin,
@@ -336,11 +336,11 @@ MGPIO_ReturnType_t MGPIO_SetPinAltFunction(MGPIO_Port_t Copy_Port, MGPIO_Pin_t C
 /* =====================================================================
  *  MGPIO_SetPinValue
  *
- *  Drives one pin HIGH or LOW through a SINGLE BSRR write — atomic,
+ *  Drives one pin HIGH or LOW through a SINGLE BSRR write â€” atomic,
  *  safe against any interrupt writing the same port. This one
  *  function replaces BOTH old APIs: the ODR read-modify-write version
  *  (racy against ISRs on the same port) and the separate "Atomic"
- *  variant (redundant — atomic is now the only implementation).
+ *  variant (redundant â€” atomic is now the only implementation).
  *
  *  The value reaches the physical pin when the pin is in OUTPUT mode
  *  (or an open-drain AF); otherwise it is only latched into ODR
@@ -366,14 +366,14 @@ MGPIO_ReturnType_t MGPIO_SetPinValue(MGPIO_Port_t Copy_Port, MGPIO_Pin_t Copy_Pi
 
     if (Copy_PinValue == MGPIO_PIN_HIGH)
     {
-        /* Set half: BS(pin), bits 15:0 — one atomic write */
+        /* Set half: BS(pin), bits 15:0 â€” one atomic write */
         Local_pu32Port->BSRR = MGPIO_BSRR_BS(Copy_Pin);
     }
     else
     {
-        /* Reset half: BR(pin), bits 31:16 — one atomic write.
+        /* Reset half: BR(pin), bits 31:16 â€” one atomic write.
            (If both halves were ever written for the same pin, the
-           reset half wins per RM0368 — this driver never does that.) */
+           reset half wins per RM0368 â€” this driver never does that.) */
         Local_pu32Port->BSRR = MGPIO_BSRR_BR(Copy_Pin);
     }
 
@@ -384,21 +384,21 @@ MGPIO_ReturnType_t MGPIO_SetPinValue(MGPIO_Port_t Copy_Port, MGPIO_Pin_t Copy_Pi
  *  MGPIO_WritePins
  *
  *  Atomically drives EVERY pin selected by Copy_u16Mask to the
- *  matching bit of Copy_u16Value — ONE BSRR write total:
+ *  matching bit of Copy_u16Value â€” ONE BSRR write total:
  *      mask bit N = 1 -> pin N driven to (Value >> N) & 1
  *      mask bit N = 0 -> pin N completely untouched
  *
  *  The set field (Value & Mask) and reset field (~Value & Mask, in
  *  bits 31:16) are disjoint by construction, so BSRR's
- *  "reset wins over set" rule can never fire — each masked pin lands
+ *  "reset wins over set" rule can never fire â€” each masked pin lands
  *  on exactly its target value simultaneously.
  *
- *  Project 4 use — the Music Maker's 8-bit R2R DAC:
+ *  Project 4 use â€” the Music Maker's 8-bit R2R DAC:
  *      MGPIO_WritePins(MGPIO_PORTB, 0x00FFu, Local_u8Sample);
  *  all 8 bits change on one bus write, so no intermediate codes
  *  glitch the audio output (pin-by-pin updates would).
  *
- *  The mask must only address pins available on this package — the
+ *  The mask must only address pins available on this package â€” the
  *  SWD pins cannot be driven through this back door either.
  * ===================================================================== */
 MGPIO_ReturnType_t MGPIO_WritePins(MGPIO_Port_t Copy_Port,
@@ -426,7 +426,7 @@ MGPIO_ReturnType_t MGPIO_WritePins(MGPIO_Port_t Copy_Port,
     Local_u32SetField   = (u32)Copy_u16Value & (u32)Copy_u16Mask;
     Local_u32ResetField = ((u32)Copy_u16Mask & ~(u32)Copy_u16Value) << 16u;
 
-    /* Single store — every masked pin updates simultaneously */
+    /* Single store â€” every masked pin updates simultaneously */
     Local_pu32Port->BSRR = Local_u32SetField | Local_u32ResetField;
 
     return MGPIO_OK;
@@ -435,7 +435,7 @@ MGPIO_ReturnType_t MGPIO_WritePins(MGPIO_Port_t Copy_Port,
 /* =====================================================================
  *  MGPIO_SetPortValue
  *
- *  Full 16-bit ODR store — one atomic write updating ALL pins of the
+ *  Full 16-bit ODR store â€” one atomic write updating ALL pins of the
  *  port. Bits belonging to pins not in output mode (input / AF / SWD
  *  / absent-on-package) are latched into ODR without effect but are
  *  NOT rejected: this function's contract is "the whole port". When
@@ -452,7 +452,7 @@ MGPIO_ReturnType_t MGPIO_SetPortValue(MGPIO_Port_t Copy_Port, u16 Copy_u16Value)
 
     Local_pu32Port = MGPIO_PortTable[Copy_Port];
 
-    /* Single full-word store — atomic on the bus */
+    /* Single full-word store â€” atomic on the bus */
     Local_pu32Port->ODR = (u32)Copy_u16Value;
 
     return MGPIO_OK;
@@ -461,12 +461,12 @@ MGPIO_ReturnType_t MGPIO_SetPortValue(MGPIO_Port_t Copy_Port, u16 Copy_u16Value)
 /* =====================================================================
  *  MGPIO_GetPinValue
  *
- *  Reads one pin from IDR — the ACTUAL pin level. For output pins,
+ *  Reads one pin from IDR â€” the ACTUAL pin level. For output pins,
  *  IDR reflects the real state ON the pin (a short to VCC/GND or an
  *  overloaded pin shows up here), not merely the ODR latch.
  *
  *  The level is delivered through the pointer; the function returns
- *  only status. The old version returned -1 in a u8 on error — which
+ *  only status. The old version returned -1 in a u8 on error â€” which
  *  arrived as 255 and was indistinguishable from a pin level.
  * ===================================================================== */
 MGPIO_ReturnType_t MGPIO_GetPinValue(MGPIO_Port_t Copy_Port, MGPIO_Pin_t Copy_Pin,
@@ -484,7 +484,7 @@ MGPIO_ReturnType_t MGPIO_GetPinValue(MGPIO_Port_t Copy_Port, MGPIO_Pin_t Copy_Pi
         return MGPIO_INVALID_PARAM;
     }
 
-    /* IDR is volatile — re-read on every call, no compiler caching */
+    /* IDR is volatile â€” re-read on every call, no compiler caching */
     *Copy_pu8Value = (u8)GET_BIT(MGPIO_PortTable[Copy_Port]->IDR, (u32)Copy_Pin);
 
     return MGPIO_OK;
@@ -494,7 +494,7 @@ MGPIO_ReturnType_t MGPIO_GetPinValue(MGPIO_Port_t Copy_Port, MGPIO_Pin_t Copy_Pi
  *  MGPIO_GetPortValue
  *
  *  Whole-port input snapshot: ONE IDR read returns all 16 pin levels
- *  coherently — the primitive for button-matrix row/column scanning,
+ *  coherently â€” the primitive for button-matrix row/column scanning,
  *  where reading pins one by one can straddle a matrix state change.
  *  Pins absent on the package read 0.
  * ===================================================================== */

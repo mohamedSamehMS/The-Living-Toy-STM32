@@ -1,5 +1,5 @@
 /*
- * H74HC595_interface.h — 74HC595 shift-register driver, PUBLIC INTERFACE
+ * H74HC595_interface.h â€” 74HC595 shift-register driver, PUBLIC INTERFACE
  *
  *  The ONLY H74HC595 file application code may include. All tunables
  *  (pins, chain length, timing) live in H74HC595_config.h.
@@ -13,7 +13,7 @@
 #include "STD_TYPES.h"
 
 /* =====================================================================
- *  BOARD ASSUMPTIONS — not driven by this driver (hardwired on the
+ *  BOARD ASSUMPTIONS â€” not driven by this driver (hardwired on the
  *  board), documented here so nobody has to rediscover them:
  *      OE    (pin 13) -> GND : outputs always enabled (active-LOW pin)
  *      SRCLR (pin 10) -> VCC : shift register never hardware-reset
@@ -22,13 +22,13 @@
  *  config change.
  * ===================================================================== */
 
-/* Configure the 3 control pins (mode, output stage, idle LOW) and —
- * this is the part people forget — CLEAR the chain: shift-register
+/* Configure the 3 control pins (mode, output stage, idle LOW) and â€”
+ * this is the part people forget â€” CLEAR the chain: shift-register
  * contents are INDETERMINATE at power-up, so until the first
  * transfer the outputs hold random bits. Init shifts out all-zero
  * bytes and latches once, leaving every output LOW from init on.
  *
- * PRECONDITION — port clock must be enabled first or every MGPIO
+ * PRECONDITION â€” port clock must be enabled first or every MGPIO
  * write is silently ignored (see MGPIO_interface.h; MGPIO cannot
  * detect this case):
  *      MRCC_EnablePeripheralClock(MRCC_GPIOA);   // HC595_* pins' port
@@ -39,10 +39,10 @@
 void H74HC595_voidInit(void);
 
 /* Shift NUMBER_OF_74HC595_CHIPS bytes through the chain, then pulse
- * the latch ONCE — all outputs of all chips update atomically in that
+ * the latch ONCE â€” all outputs of all chips update atomically in that
  * single edge (no intermediate states ever visible on the pins).
  *
- * DAISY-CHAIN MAPPING (easy to get backwards — the #1 wiring bug):
+ * DAISY-CHAIN MAPPING (easy to get backwards â€” the #1 wiring bug):
  *      Copy_pu8DataArray[0]   shifted FIRST  -> travels the full depth
  *                                               of the chain -> ends in
  *                                               the chip FARTHEST from
@@ -60,12 +60,12 @@ void H74HC595_voidInit(void);
  * The array must hold at least NUMBER_OF_74HC595_CHIPS bytes.
  * NULL is ignored (defensive no-op).
  *
- * CONCURRENCY: the shift sequence itself is NOT atomic — an ISR that
+ * CONCURRENCY: the shift sequence itself is NOT atomic â€” an ISR that
  * also calls SendData between two of the 16 clocks will interleave
  * bits and the final latch commits garbage. Safe patterns: call only
  * from main level, OR only from one ISR, OR wrap one side in a
  * disable/enable-IRQ critical section. (The HLEDMTX POV pattern calls
- * this from exactly ONE context — the periodic tick — so it is fine.)
+ * this from exactly ONE context â€” the periodic tick â€” so it is fine.)
  *
  * BLOCKING: ~10-15 us for 2 chips with the default no-delay config
  * (HC595_MIN_HALF_CLOCK_US = 0). */

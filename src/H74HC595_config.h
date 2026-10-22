@@ -1,23 +1,23 @@
 /*
- * H74HC595_config.h — 74HC595 shift-register driver, CONFIGURATION
+ * H74HC595_config.h â€” 74HC595 shift-register driver, CONFIGURATION
  *
- *  Project 4 — Interactive Gaming Hub (ARM Embedded Systems Diploma)
+ *  Project 4 â€” Interactive Gaming Hub (ARM Embedded Systems Diploma)
  *  Target  : STM32F401CCU6 (WeAct Black Pill), register-level bare metal
- *  Layer   : HAL. Sits directly on MGPIO (bit-bang backend — no MSPI
+ *  Layer   : HAL. Sits directly on MGPIO (bit-bang backend â€” no MSPI
  *            dependency in this revision; moving SER/SRCLK onto real
  *            SPI pins later is a natural upgrade, see program header).
- *  Purpose : "serial-to-parallel" expansion — N output pins from 3 MCU
+ *  Purpose : "serial-to-parallel" expansion â€” N output pins from 3 MCU
  *            pins. In Project 4 it drives the 8x8 LED matrix through
  *            two daisy-chained chips (HLEDMTX 595 backend).
  *
- *  CHIP REFERENCE (74HC595, 16-pin package — names used throughout):
+ *  CHIP REFERENCE (74HC595, 16-pin package â€” names used throughout):
  *      pin 14 SER     serial data in         (driven: DATA pin below)
  *      pin 11 SRCLK   shift register clock   (driven: SHIFT_CLOCK)
  *      pin 12 RCLK    storage/latch clock    (driven: LATCH_CLOCK)
  *      pin 13 OE      output enable, active LOW    (board: tied GND)
  *      pin 10 SRCLR   shift register clear, active LOW (board: tied VCC)
  *      pins 15..1, QA..QH  the 8 parallel outputs
- *      pin  9 QH'     serial data OUT — the daisy-chain tap to the
+ *      pin  9 QH'     serial data OUT â€” the daisy-chain tap to the
  *                     NEXT chip's SER
  *
  *  DAISY CHAIN (NUMBER_OF_74HC595_CHIPS = 2, the matrix case):
@@ -50,7 +50,7 @@
  *
  *  Number of 74HC595s daisy-chained:  MCU SER -> chip 1 -> chip 2 ...
  *  Each chip adds 8 parallel outputs. SendData shifts EXACTLY this
- *  many bytes, so this MUST match the physical chain — the rev-1 bug
+ *  many bytes, so this MUST match the physical chain â€” the rev-1 bug
  *  was exactly this mismatch (chips = 1, caller passing 2 bytes: the
  *  row byte was silently dropped and the matrix could never light a
  *  row; nothing erro out anywhere, which is what made it hard to see).
@@ -59,26 +59,26 @@
 #define NUMBER_OF_74HC595_CHIPS      2
 
 /* =====================================================================
- *  Control pins — the entire pin cost of this driver (3 pins total)
+ *  Control pins â€” the entire pin cost of this driver (3 pins total)
  * ===================================================================== */
 
-/* Serial Data Pin (SER, pin 14) — bit values are presented here, one
+/* Serial Data Pin (SER, pin 14) â€” bit values are presented here, one
  * per shift-clock pulse, MSB of each byte first. */
 #define HC595_DATA_PORT              MGPIO_PORTA
 #define HC595_DATA_PIN               MGPIO_PIN_0
 
-/* Shift Clock Pin (SRCLK, pin 11) — one bit shifts into the register
+/* Shift Clock Pin (SRCLK, pin 11) â€” one bit shifts into the register
  * on each RISING edge. Driven LOW->HIGH->LOW per bit by the driver. */
 #define HC595_SHIFT_CLOCK_PORT       MGPIO_PORTA
 #define HC595_SHIFT_CLOCK_PIN        MGPIO_PIN_1
 
-/* Latch Clock Pin (RCLK, pin 12) — on a RISING edge the whole shift
+/* Latch Clock Pin (RCLK, pin 12) â€” on a RISING edge the whole shift
  * register is copied to the output latches: all outputs of all chips
  * change TOGETHER (that atomic update is what lets the LED matrix
  * swap a complete scan line with no ghosting).
  *
  * !!! PIN COLLISION WARNING: PA2 = USART2_TX (AF7). If HESP ever
- * lands on USART2, this line must move BEFORE wiring — a shift
+ * lands on USART2, this line must move BEFORE wiring â€” a shift
  * register latch clock and a UART transmitter cannot share a pin.
  * (USART1 on PA9/PA10 does not collide.) */
 #define HC595_LATCH_CLOCK_PORT       MGPIO_PORTA
@@ -95,17 +95,17 @@
  *      0 (DEFAULT) = no busy-wait at all.
  *          - SendData is pure GPIO: ~10-15 us for a 2-chip update,
  *            ISR-safe, and has NO SysTick dependency whatsoever.
- *          - The resulting bit-bang clock runs in the low-MHz range —
+ *          - The resulting bit-bang clock runs in the low-MHz range â€”
  *            still far inside spec.
  *      1-2         = re-add the rev-1-style busy-wait between edges.
  *          Use ONLY if the chain misbehaves (long wires, breadboard
- *          ringing on the clock line — a scope is the way to decide).
+ *          ringing on the clock line â€” a scope is the way to decide).
  *          Any value > 0 pulls in MSYSTICK (conditional include in
  *          the program file), which means: SysTick must be initialized
  *          BEFORE SendData is first called, and SendData must NOT be
  *          called from inside the SysTick ISR itself (a busy-wait
  *          inside SysTick's own handler reprograms the counter it is
- *          waiting on — the periodic tick breaks).                     */
+ *          waiting on â€” the periodic tick breaks).                     */
 #define HC595_MIN_HALF_CLOCK_US      1
 
 #endif /* H74HC595_CONFIG_H_ */

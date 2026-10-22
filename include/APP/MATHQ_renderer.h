@@ -1,10 +1,10 @@
 /*
- * MATHQ_renderer.h — the TFT-side contract for Math Quiz.
+ * MATHQ_renderer.h â€” the TFT-side contract for Math Quiz.
  *  LOCATION: APP/ (flat).
  *
  *  The renderer paints the flashcard scene (panel + large equation +
  *  answer slots), the 3x4 keypad, the key cursor, hearts, and HUD.
- *  It knows nothing about questions, levels, or the answer — the
+ *  It knows nothing about questions, levels, or the answer â€” the
  *  caller supplies values; pixels live only inside MATHQ_renderer.c.
  *
  *  Keypad layout (key index 0..11, row-major):
@@ -39,7 +39,7 @@
 /* ---- API ---- */
 
 /* Entry/transition repaint: bg, panel box, HUD, message prompt,
- * all 12 keys (no cursor — caller owns cursor position).            */
+ * all 12 keys (no cursor â€” caller owns cursor position).            */
 void MATHQ_voidPaintScreen(void);
 
 /* Wipe the panel interior (for shake redraws). Border stays.        */
@@ -56,7 +56,7 @@ void MATHQ_voidPaintQuestionLine(u8 Copy_u8A, char Copy_chOp, u8 Copy_u8B,
                                  u16 Copy_u16AnsColor, s8 Copy_s8Shift);
 
 /* Redraw ONLY the answer slots (typed digits / '?' / reveal) in the
- * slots reserved by the last PaintQuestionLine. Opaque cells — the
+ * slots reserved by the last PaintQuestionLine. Opaque cells â€” the
  * blank slot is erased automatically. Supports 0..2 digits.         */
 void MATHQ_voidPaintAnswer(const char *Copy_chDigits, u8 Copy_u8Len,
                            u16 Copy_u16Color);
@@ -65,13 +65,13 @@ void MATHQ_voidPaintAnswer(const char *Copy_chDigits, u8 Copy_u8Len,
 void MATHQ_voidPaintKey(u8 Copy_u8KeyIdx, u8 Copy_u8Pressed);
 
 /* Yellow cursor ring around a key (visible=1) / erase it (visible=0).
- * The ring lives in the 4-px gaps — the key itself is untouched.    */
+ * The ring lives in the 4-px gaps â€” the key itself is untouched.    */
 void MATHQ_voidPaintKeyCursor(u8 Copy_u8KeyIdx, u8 Copy_u8Visible);
 
 /* Heart idx 0..2 in the HUD row: image / black erase.               */
 void MATHQ_voidPaintHeart(u8 Copy_u8Idx, u8 Copy_u8Visible);
 
-/* HUD cells — fixed-width opaque overwrites.                        */
+/* HUD cells â€” fixed-width opaque overwrites.                        */
 void MATHQ_voidPaintScore(u16 Copy_u16Score);
 void MATHQ_voidPaintLevel(u8 Copy_u8Level);
 

@@ -1,5 +1,5 @@
 /*
- * TTT_app.h — the shared application flow state (M9).
+ * TTT_app.h â€” the shared application flow state (M9).
  *  LOCATION: APP/ (flat).
  *
  *  The FSM state is shared app-level state: the enum and the
@@ -26,7 +26,7 @@ typedef enum
     GAME_ST_HUMAN, GAME_ST_AI, GAME_ST_WIN_FLASH, GAME_ST_GAME_END
 } Game_State_t;
 
-/* ownership by range — the enum order is load-bearing */
+/* ownership by range â€” the enum order is load-bearing */
 #define APP_IS_NET_STATE(s)  (((s) >= GAME_ST_NET_WAIT) && ((s) <= GAME_ST_JOIN_ENTRY))
 #define APP_IS_GAME_STATE(s) (((s) >= GAME_ST_ON_TURN)  && ((s) <= GAME_ST_GAME_END))
 

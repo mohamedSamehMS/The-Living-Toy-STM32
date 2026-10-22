@@ -1,8 +1,8 @@
 /*
- * APP_FOTA.c — FOTA receiver implementation (FOTA seat, v2.1; the R5
+ * APP_FOTA.c â€” FOTA receiver implementation (FOTA seat, v2.1; the R5
  *              absorption's include adaptations applied).
  *
- *  THE CORE (shared): the v1.6 state machine — frame collect /
+ *  THE CORE (shared): the v1.6 state machine â€” frame collect /
  *  0xAA-drain / CRC gate / staging write / trailer with the magic
  *  word LAST. Transport-agnostic: bytes in (FeedByte), one byte out
  *  (the active TX), status out.
@@ -11,16 +11,16 @@
  *   [BENCH] MUSART callbacks on APP_FOTA_BENCH_USART (config) +
  *           the v1 text header parse; terminal lines print on the
  *           SAME wire; self-reset after OK STAGED. (Not used on this
- *           tree — NET mode only; the bench binding is dead code
+ *           tree â€” NET mode only; the bench binding is dead code
  *           under --gc-sections until something calls Init/Run.)
  *   [NET]   NET supplies bytes (via HESP's raw router) and the
  *           raw-TX function; errors become statuses + console
  *           narration; the reset waits for NET's DONE terminal.
  *
  *  Revision history: v2.2 (protocol v1.7: the sequence byte; the
- *  duplicate re-ACK; the DUP counter) / v2.1 / v2.0 / v1.7 / v1.6/1.5 —
+ *  duplicate re-ACK; the DUP counter) / v2.1 / v2.0 / v1.7 / v1.6/1.5 â€”
  *  the FOTA seat's line, verbatim. Frozen protocol constants live in
- *  APP_FOTA_config.h (section 2 — DO NOT EDIT).
+ *  APP_FOTA_config.h (section 2 â€” DO NOT EDIT).
  */
 
 #include "STD_TYPES.h"
@@ -31,7 +31,7 @@
 #include <MCAL/USART/MUSART_interface.h>
 
 #include "../MNVIC_interface.h"              /* the system-reset call (the tree's
-                                             path form — the delivered
+                                             path form â€” the delivered
                                              "../MNVIC_interface.h" breaks) */
 
 #include "APP/APP_FOTA_config.h"
@@ -46,7 +46,7 @@
 
 /* ---- shared state (volatile: the BENCH binding feeds this
  *        from the MUSART ISR; the NET binding feeds it from
- *        loop context — the discipline covers the harder case) ---- */
+ *        loop context â€” the discipline covers the harder case) ---- */
 static volatile u8  Global_au8HeaderBuf[FOTA_HEADER_BUF_SIZE];
 static volatile u8  Global_u8HeaderLen    = 0u;
 static volatile u8  Global_u8HeaderReady  = 0u;
@@ -79,7 +79,7 @@ static MUSART_USART_t Global_EnumPrintUsart = MUSART_USART2;
 static u32 Global_au32DataWords[FOTA_DATA_SIZE / 4u];
 
 /* =====================================================================
- *  Console/wire helpers — all text goes through Global_EnumPrintUsart
+ *  Console/wire helpers â€” all text goes through Global_EnumPrintUsart
  * ===================================================================== */
 static void APP_FOTA_privatePrintStr(const char *Copy_pchText)
 {
@@ -122,7 +122,7 @@ static void APP_FOTA_privatePrintHex32(u32 Copy_u32Value)
 }
 
 /* NET-mode informational narration (config-gated). Terminal status
-   lines are NOT routed through here — they are the wire contract
+   lines are NOT routed through here â€” they are the wire contract
    in bench mode and the report in NET mode; they print always. */
 static void APP_FOTA_privateNarrate(const char *Copy_pchText)
 {
@@ -139,7 +139,7 @@ static void APP_FOTA_privateBenchTx(u8 Copy_u8Byte)
     (void)MUSART_SendByteBlocking(APP_FOTA_BENCH_USART, Copy_u8Byte);
 }
 
-/* The unified TX — whichever binding armed it */
+/* The unified TX â€” whichever binding armed it */
 static void APP_FOTA_privateTx(u8 Copy_u8Byte)
 {
     if (Global_pfTx != 0)
@@ -149,7 +149,7 @@ static void APP_FOTA_privateTx(u8 Copy_u8Byte)
 }
 
 /* =====================================================================
- *  THE CORE — feed / collect / drain
+ *  THE CORE â€” feed / collect / drain
  * ===================================================================== */
 void APP_FOTA_voidFeedByte(u8 Copy_u8Data)
 {
@@ -166,13 +166,13 @@ void APP_FOTA_voidFeedByte(u8 Copy_u8Data)
                 Global_u8FrameReady = 1u;
             }
         }
-        /* else: frame pending — drop (stop-and-wait + resync) */
+        /* else: frame pending â€” drop (stop-and-wait + resync) */
     }
     else if (Global_u8State == FOTA_STATE_DRAIN)
     {
         /* v2.3: the marker alone no longer resyncs. 0xAA can appear
            in frame DATA; a data-0xAA resync mid-discard leaves a
-           partial collect that partitions every retry identically —
+           partial collect that partitions every retry identically â€”
            the inescapable frame-7 attractor. The byte AFTER the
            marker must now validate as the expected or previous SEQ
            before collection resumes. */
@@ -203,7 +203,7 @@ void APP_FOTA_voidFeedByte(u8 Copy_u8Data)
         }
         else
         {
-            /* not a frame head — keep discarding (silent; the
+            /* not a frame head â€” keep discarding (silent; the
                sender's timeout governs) */
             Global_u8State = FOTA_STATE_DRAIN;
         }
@@ -222,13 +222,13 @@ void APP_FOTA_voidFeedByte(u8 Copy_u8Data)
             Global_au8HeaderBuf[Global_u8HeaderLen] = Copy_u8Data;
             Global_u8HeaderLen++;
         }
-        else { /* overlong — the parse will reject */ }
+        else { /* overlong â€” the parse will reject */ }
     }
     /* DONE: discard */
 }
 
 /* =====================================================================
- *  THE CORE — frame processing + finalize (main loop, both modes)
+ *  THE CORE â€” frame processing + finalize (main loop, both modes)
  * ===================================================================== */
 static void APP_FOTA_privateProcessFrame(void)
 {
@@ -241,7 +241,7 @@ static void APP_FOTA_privateProcessFrame(void)
     MFLS_ReturnType_t Local_EnumFls;
     MCRC_ReturnType_t Local_EnumCrc;
 
-    /* v1.7: CRC over SEQ + DATA (129 bytes, wire order — the
+    /* v1.7: CRC over SEQ + DATA (129 bytes, wire order â€” the
        sender CRC'd exactly these bytes in exactly this order) */
     Local_EnumCrc = MCRC_CalcBuffer((const u8 *)(void *)Global_au8FrameBuf,
                                     (FOTA_SEQ_SIZE + FOTA_DATA_SIZE),
@@ -275,7 +275,7 @@ static void APP_FOTA_privateProcessFrame(void)
     if (Local_u8Seq == Local_u8Expected)
     {
         /* The normal path: assemble words from DATA (offset = SEQ).
-           NATIVE little-endian — byte 0 of data -> low byte; Flash
+           NATIVE little-endian â€” byte 0 of data -> low byte; Flash
            bytes land in file order. */
         for (Local_u16Index = 0u; Local_u16Index < (FOTA_DATA_SIZE / 4u); Local_u16Index++)
         {
@@ -308,9 +308,9 @@ static void APP_FOTA_privateProcessFrame(void)
     {
         /* v1.7 DUPLICATE: the previous frame retransmitted (its ACK
            was lost in flight). CRC valid, seq == previous. Re-ACK,
-           write nothing, advance nothing — the sender recovers on
+           write nothing, advance nothing â€” the sender recovers on
            the ACK and the slot map stays exact. THIS closes the
-           spurious-E2E_FAIL class (FOTA-SPEC-2 §4). */
+           spurious-E2E_FAIL class (FOTA-SPEC-2 Â§4). */
         APP_FOTA_privateTx(FOTA_ACK);
         Global_u32DupCount++;
         Global_u16FrameIdx  = 0u;
@@ -319,7 +319,7 @@ static void APP_FOTA_privateProcessFrame(void)
     else
     {
         /* seq matches neither the expected nor the previous slot:
-           treat as corruption — NAK + resync */
+           treat as corruption â€” NAK + resync */
         APP_FOTA_privateTx(FOTA_NAK);
         Global_u16FrameIdx  = 0u;
         Global_u8FrameReady = 0u;
@@ -360,7 +360,7 @@ static void APP_FOTA_privateFinalize(void)
         return;
     }
 
-    /* Trailer v2 — magic word LAST (the commit point) */
+    /* Trailer v2 â€” magic word LAST (the commit point) */
     Local_au32Trailer[0] = FOTA_MAGIC;
     Local_au32Trailer[1] = FOTA_TRAILER_VERSION;
     Local_au32Trailer[2] = Global_u32Version;
@@ -424,7 +424,7 @@ static void APP_FOTA_privateFinalize(void)
 }
 
 /* =====================================================================
- *  THE CORE — poll (both modes' main-loop pump)
+ *  THE CORE â€” poll (both modes' main-loop pump)
  * ===================================================================== */
 void APP_FOTA_voidPoll(void)
 {
@@ -454,7 +454,7 @@ void APP_FOTA_voidPoll(void)
 }
 
 /* =====================================================================
- *  BENCH MODE — the v1 API, preserved (dead code on this tree: NET
+ *  BENCH MODE â€” the v1 API, preserved (dead code on this tree: NET
  *  mode only; kept per the seat's two-binding contract)
  * ===================================================================== */
 static void APP_FOTA_privateRxByte(u8 Copy_u8Data)
@@ -539,7 +539,7 @@ void APP_FOTA_Init(void)
     (void)MUSART_SetIdleCallback(APP_FOTA_BENCH_USART, APP_FOTA_privateIdle);
     (void)MUSART_ReceiveEnable   (APP_FOTA_BENCH_USART);
 
-    /* bench fingerprint (the V4 lesson — carried from v1.6a) */
+    /* bench fingerprint (the V4 lesson â€” carried from v1.6a) */
     APP_FOTA_privatePrintStr("FOTA RX ABORT_MS=");
     APP_FOTA_privatePrintDec(FOTA_ABORT_MS);
     APP_FOTA_privatePrintStr(" FRAME=");
@@ -588,7 +588,7 @@ void APP_FOTA_Run(void)
 }
 
 /* =====================================================================
- *  NET MODE — the v2 API (this tree's live path)
+ *  NET MODE â€” the v2 API (this tree's live path)
  * ===================================================================== */
 APP_FOTA_Status_t APP_FOTA_enumPrepare(void)
 {
@@ -628,7 +628,7 @@ APP_FOTA_Status_t APP_FOTA_enumBeginNet(u32 Copy_u32Version,
     if (Copy_u16FrameSizeEcho != FOTA_DATA_SIZE)
     {
         /* The field is carried by the bracket; this build supports
-           128 only — honest refusal, never a silent clamp. */
+           128 only â€” honest refusal, never a silent clamp. */
         Global_EnumStatus = FOTA_STATUS_ERR_SIZE;
         return Global_EnumStatus;
     }
@@ -676,7 +676,7 @@ const char * APP_FOTA_pchGetStatusToken(void)
     /* The REGISTERED DONE-transaction set: OK / E2E_FAIL / ABORTED /
        WATCHDOG. Flash/CRC/trailer failures report ABORTED (the console
        carries the detail via enumGetStatus). The pre-BEGIN statuses
-       never ride DONE — NET refuses before BEGIN — and fall to
+       never ride DONE â€” NET refuses before BEGIN â€” and fall to
        ABORTED as the safety default. WATCHDOG is NET's own token. */
     switch (Global_EnumStatus)
     {
@@ -688,7 +688,7 @@ const char * APP_FOTA_pchGetStatusToken(void)
 
 void APP_FOTA_voidNetReset(void)
 {
-    /* NET called this on the RESP_FOTA_DONE terminal — the ESP has
+    /* NET called this on the RESP_FOTA_DONE terminal â€” the ESP has
        dropped its gate, the referee has the report. Reset now;
        the bootloader commits. Crude delay (FOTA-06). */
     volatile u32 Local_u32Count = 500u * 3000u;

@@ -1,15 +1,15 @@
 /*
- * HVirtualButtons_interface.h — SHARED virtual button type
+ * HVirtualButtons_interface.h â€” SHARED virtual button type
  *
- *  Project 4 — Interactive Gaming Hub (ARM Embedded Systems Diploma)
+ *  Project 4 â€” Interactive Gaming Hub (ARM Embedded Systems Diploma)
  *  Target  : STM32F401CCU6 (WeAct Black Pill), register-level bare metal
- *  Layer   : HAL-common — sits ABOVE the input-controller HAL drivers.
+ *  Layer   : HAL-common â€” sits ABOVE the input-controller HAL drivers.
  *
  *  WHY THIS FILE EXISTS (the layering rule):
  *  HIR (NEC remote) and HButtons (physical push buttons) are PEER
  *  drivers that both emit this type. The type therefore may not live
  *  in either driver's header: two HAL headers defining the same enum
- *  either redefinition-error at compile time, or — worse — quietly
+ *  either redefinition-error at compile time, or â€” worse â€” quietly
  *  diverge into two enums with the same name and different values
  *  across translation units. One definition, included by both
  *  controllers and by Control/game logic.
@@ -17,10 +17,10 @@
  *  Downstream contract: game/state logic receives BTN_* values and
  *  CANNOT tell (and never needs to tell) whether an event came from
  *  the IR remote or a physical button. The ESP/Tic-Tac-Toe online
- *  path does NOT emit these events — internet play carries MOVES,
+ *  path does NOT emit these events â€” internet play carries MOVES,
  *  not button events (settled in the multiplayer discussion).
  *
- *  Values are stable identifiers, not bit positions — ORDER IS ABI:
+ *  Values are stable identifiers, not bit positions â€” ORDER IS ABI:
  *  appending is safe; never insert/reorder (the HIR repeat-allow
  *  mask and every game's switch tables index by these values).
  *
@@ -30,16 +30,16 @@
 #ifndef HVIRTUALBUTTONS_INTERFACE_H_
 #define HVIRTUALBUTTONS_INTERFACE_H_
 
-/* No includes needed — this header is dependency-free by design so
+/* No includes needed â€” this header is dependency-free by design so
  * every consumer (HIR, HButtons, Control, games) can include it
  * without dragging MCAL headers along. */
 
 /* =====================================================================
- *  VirtualButton_t — semantic button roles
+ *  VirtualButton_t â€” semantic button roles
  *
  *  Two layers, matching the remote's physical split:
  *    - controller layer : D-pad, Confirm, Back, Options, Start, L1/R1
- *      (the PlayStation-style abstraction — movement and menus; every
+ *      (the PlayStation-style abstraction â€” movement and menus; every
  *      game consumes these)
  *    - numeric layer    : digits 1-9, 100+, 200+ (game-specific entry:
  *      Tic-Tac-Toe cell selection, Math Quiz answers, Memory Match
@@ -49,7 +49,7 @@
  *  NO remote button maps to it: the design layout assigns the "0" key
  *  to BTN_BACK (the numeric layer is 1-9). Note for Math Quiz: answers
  *  containing the digit 0 need an application-level decision (e.g.
- *  repurposing 100+/200+ in that game's context) — open item.
+ *  repurposing 100+/200+ in that game's context) â€” open item.
  *
  *  BTN_NONE is the sentinel: "no button". Used for "no pending event",
  *  "unmapped code", and "no last-accepted button". It is NEVER a valid
@@ -63,7 +63,7 @@ typedef enum
     BTN_LEFT,                       /* D-pad                          */
     BTN_RIGHT,                      /* D-pad                          */
     BTN_CONFIRM,                    /* "Cross"                        */
-    BTN_BACK,                       /* "Circle" — remote key "0"      */
+    BTN_BACK,                       /* "Circle" â€” remote key "0"      */
     BTN_OPTIONS,                    /* "Triangle"                     */
     BTN_START,                      /* play/pause                     */
     BTN_L1,                         /* shoulder                       */

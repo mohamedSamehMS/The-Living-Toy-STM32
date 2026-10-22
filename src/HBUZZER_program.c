@@ -1,7 +1,7 @@
 /*
- * HBUZZER_program.c — shared buzzer HAL driver, IMPLEMENTATION
+ * HBUZZER_program.c â€” shared buzzer HAL driver, IMPLEMENTATION
  *
- *  Project 4 — Interactive Gaming Hub (ARM Embedded Systems Diploma)
+ *  Project 4 â€” Interactive Gaming Hub (ARM Embedded Systems Diploma)
  *  Target : STM32F401CCU6 (WeAct Black Pill), register-level bare metal
  *  Layer  : HAL -> MCAL (MTIM, MGPIO) + FreeRTOS (critical sections)
  *
@@ -13,14 +13,14 @@
  *
  *  2. HARDWARE-TIMED DURATIONS, TWO-PHASE TEARDOWN (Rev 2). A timed
  *     tone ends in TWO steps inside the update ISR: one period BEFORE
- *     the deadline, CCR is preloaded to 0 — the NEXT update event
+ *     the deadline, CCR is preloaded to 0 â€” the NEXT update event
  *     latches the output INACTIVE (LOW); only then does DeInit freeze
  *     the pin, now at a DEFINED silent level. (Rev 1's single-phase
- *     DeInit froze the pin at whatever level the PWM held — and the
+ *     DeInit froze the pin at whatever level the PWM held â€” and the
  *     teardown instant is deterministically the UPDATE instant, where
  *     PWM mode 1 has JUST set the output ACTIVE: the pin froze HIGH
  *     every single blip, leaving DC on the transducer. Bench-confirmed:
- *     bz=50 ISRs/blip, bzd=1 teardown/blip — mechanism perfect, output
+ *     bz=50 ISRs/blip, bzd=1 teardown/blip â€” mechanism perfect, output
  *     level wrong. The fix makes the END STATE a contract, not luck.)
  *
  *  3. FREQUENCY CHANGE = DeInit + PWMStart. One PSC/ARR pair per
@@ -29,16 +29,16 @@
  *  4. STATE PROTECTION = KERNEL CRITICAL SECTIONS. Mutating APIs run
  *     under taskENTER/EXIT_CRITICAL: the sequences are microseconds,
  *     and BASEPRI masks the TIM10 ISR (priority 5, at/below the
- *     syscall mask) — task-vs-task AND task-vs-ISR interleaving are
+ *     syscall mask) â€” task-vs-task AND task-vs-ISR interleaving are
  *     both excluded on this single core.
  *
  *  5. SILENT BY CONSTRUCTION AT BOOT. Init wires the pin and nothing
- *     else — TIM10 is untouched until the first tone request.
+ *     else â€” TIM10 is untouched until the first tone request.
  *
  *  Revision history:
- *    Rev 1 — first release; the frozen-output bug (teardown froze the
+ *    Rev 1 â€” first release; the frozen-output bug (teardown froze the
  *            pin HIGH, deterministically, at the update instant)
- *    Rev 2 — two-phase teardown (this revision): CCR=0 preload one
+ *    Rev 2 â€” two-phase teardown (this revision): CCR=0 preload one
  *            period early -> output latches LOW -> DeInit freezes the
  *            defined level. ToneStop shares the mechanism. Diagnosed
  *            on the bench (bz/bzd counters), fixed by design.
@@ -80,14 +80,14 @@ static void HBUZZER_privateUpdateISR(void)
 {
     /* ISR context, TIM10's priority (5). Register/static writes only.
 
-     * PHASE 1 (PeriodsRemaining == 1): CCR=0, preloaded — takes
+     * PHASE 1 (PeriodsRemaining == 1): CCR=0, preloaded â€” takes
      * effect at the NEXT update event. This period still sounds
      * (correct: the requested duration includes it); the period
      * AFTER it will be silent. The clamp in StartTone guarantees
      * this branch has runway (>= 2 periods).
      *
      * PHASE 2 (== 0): this update event just latched the preloaded
-     * CCR=0 with CNT=0 — compare 0 < 0 is false, so the output has
+     * CCR=0 with CNT=0 â€” compare 0 < 0 is false, so the output has
      * been INACTIVE (LOW) from this instant. DeInit now freezes the
      * pin at a DEFINED silent level. Never a frozen HIGH, never DC. */
     if (Global_eMode != HBUZZER_MODE_TIMED) { return; }
@@ -103,7 +103,7 @@ static void HBUZZER_privateUpdateISR(void)
         (void)MTIM_DeInit(HBUZZER_TIMER);                     /* phase 2 */
         Global_eMode = HBUZZER_MODE_SILENT;
     }
-    else { /* > 1: still counting — the tone continues */ }
+    else { /* > 1: still counting â€” the tone continues */ }
 }
 
 /* ==== the common start sequence ===================================== */
@@ -138,7 +138,7 @@ static HBUZZER_ReturnType_t HBUZZER_privateStartTone(HBUZZER_Priority_t Copy_Pri
 
     /* A restart supersedes any in-flight countdown: DeInit kills the
      * old tone outright, and a fresh request below has its own full
-     * countdown. The OLD tone's pin level is irrelevant — the new
+     * countdown. The OLD tone's pin level is irrelevant â€” the new
      * PWMStart drives the pin from its own first period.           */
     (void)MTIM_DeInit(HBUZZER_TIMER);
 
@@ -159,11 +159,11 @@ static HBUZZER_ReturnType_t HBUZZER_privateStartTone(HBUZZER_Priority_t Copy_Pri
         Local_u32Periods = ((((u32)Copy_u16DurationMs * (u32)Copy_u16FreqHz) + 999u) / 1000u);
 
         /* Phase-1 needs one period of runway: clamp to 2. (A 50 ms/
-           1 kHz blip computes 50 — the clamp only guards degenerate
+           1 kHz blip computes 50 â€” the clamp only guards degenerate
            short-duration/high-frequency corners.)                    */
         if (Local_u32Periods < 2u) { Local_u32Periods = 2u; }
 
-        /* State BEFORE arming (a pending UIF may fire immediately —
+        /* State BEFORE arming (a pending UIF may fire immediately â€”
          * MTIM's documented periodic semantics; the countdown must
          * already be valid).                                        */
         Global_eMode = HBUZZER_MODE_TIMED;
@@ -172,7 +172,7 @@ static HBUZZER_ReturnType_t HBUZZER_privateStartTone(HBUZZER_Priority_t Copy_Pri
 
         if (MTIM_EnableUpdateInterrupt(HBUZZER_TIMER, HBUZZER_privateUpdateISR) != MTIM_OK)
         {
-            /* UIE failed to arm: the tone would never self-end — tear
+            /* UIE failed to arm: the tone would never self-end â€” tear
              * it down NOW (pin may freeze at an active level, but a
              * stuck-config error state beats an infinite blip; the
              * next Start or Stop re-synchronizes).                   */
@@ -184,7 +184,7 @@ static HBUZZER_ReturnType_t HBUZZER_privateStartTone(HBUZZER_Priority_t Copy_Pri
     }
     else
     {
-        /* Sustained: PWM only — NO interrupt runs while it sounds. */
+        /* Sustained: PWM only â€” NO interrupt runs while it sounds. */
         Global_eMode = HBUZZER_MODE_SUSTAINED;
         Global_eActivePriority = Copy_Priority;
     }
@@ -197,7 +197,7 @@ static HBUZZER_ReturnType_t HBUZZER_privateStartTone(HBUZZER_Priority_t Copy_Pri
 
 HBUZZER_ReturnType_t HBUZZER_enumInit(void)
 {
-    /* Pin: AF mode, TIM10_CH1. Output stage: push-pull, low speed —
+    /* Pin: AF mode, TIM10_CH1. Output stage: push-pull, low speed â€”
      * kHz-class edges, bench-proven at this setting. The timer is
      * NOT touched: silent until the first tone.                      */
     if (MGPIO_SetPinMode        (HBUZZER_PORT, HBUZZER_PIN, MGPIO_MODE_ALT_FUNC) != MGPIO_OK)
@@ -255,14 +255,14 @@ HBUZZER_ReturnType_t HBUZZER_enumToneStop(HBUZZER_Priority_t Copy_Priority)
          * through the ISR's two-phase teardown. CCR=0 preloaded ->
          * output latches LOW at the next update -> DeInit freezes
          * the defined level. One period of residual sound (~1 ms at
-         * 1 kHz) is the price of a defined end state — accepted.   */
+         * 1 kHz) is the price of a defined end state â€” accepted.   */
         if (Global_eMode == HBUZZER_MODE_SUSTAINED)
         {
             Global_eMode = HBUZZER_MODE_TIMED;          /* join the ISR path */
             Global_u32PeriodsRemaining = 2u;            /* 2 = phase 1 next tick */
             if (MTIM_EnableUpdateInterrupt(HBUZZER_TIMER, HBUZZER_privateUpdateISR) != MTIM_OK)
             {
-                /* Arming failed: fall back to the immediate stop —
+                /* Arming failed: fall back to the immediate stop â€”
                  * an active-level freeze in an error corner beats a
                  * tone that ignores Stop. The next Start repairs.   */
                 (void)MTIM_DeInit(HBUZZER_TIMER);
@@ -271,7 +271,7 @@ HBUZZER_ReturnType_t HBUZZER_enumToneStop(HBUZZER_Priority_t Copy_Priority)
                 return HBUZZER_NOK;
             }
         }
-        /* TIMED already: its own ISR completes the teardown — do
+        /* TIMED already: its own ISR completes the teardown â€” do
          * nothing here; the pin ends LOW by the mechanism.         */
         taskEXIT_CRITICAL();
         return HBUZZER_OK;

@@ -1,37 +1,37 @@
 /*
- * APP_FOTA_NET.h — the FOTA orchestrator (FOTA seat, v1.2 — the
+ * APP_FOTA_NET.h â€” the FOTA orchestrator (FOTA seat, v1.2 â€” the
  *                   consent-model deltas).
  *
  *  THE CONSENT DELTAS (FOTA-48/49, per the ESP seat's v0.4.0 brief):
- *    1. THE DOTTED COMPARE: APP_FOTA_NET_u8VersionNewer() — numeric
+ *    1. THE DOTTED COMPARE: APP_FOTA_NET_u8VersionNewer() â€” numeric
  *       per component, missing = 0 ("8.0" == "8.0.0"; "10.0.0" >
- *       "7.0.0" — the lexical trap closed). Exposed PUBLIC: the
+ *       "7.0.0" â€” the lexical trap closed). Exposed PUBLIC: the
  *       hub consumes it for its own policy decisions (one
  *       implementation, one truth).
  *    2. POLICY 1 UN-BLOCKED: the compare now gates the NOTIFIED
- *       transition in BOTH modes — same/older than the running
+ *       transition in BOTH modes â€” same/older than the running
  *       build => the notify is DISCARDED (a refresh re-notify of a
  *       suppressed version never reaches the hub; the auto-accept
  *       loop closes by construction: post-commit, C12's re-offer
  *       of the just-installed version drops here).
  *    3. THE NOTIFIED RE-ACCEPT (Finding 1): AVAILABLE is now
- *       accepted in IDLE and NOTIFIED — a newer offer while the
+ *       accepted in IDLE and NOTIFIED â€” a newer offer while the
  *       prompt stands UPDATES the triple and RE-FIRES the
  *       callback (the screen refreshes; the ESP seat's precedence
  *       rule composes by design). A same/older re-offer while
  *       NOTIFIED: discarded (the standing offer is >= it).
  *    4. THE WATCHDOG RESUME: in hub mode, the watchdog returns to
  *       NOTIFIED-with-triple (the hub re-offers: "update
- *       interrupted — resume?"); in AUTO mode, to IDLE (NOTIFIED
- *       has no AUTO-mode exit — a stranded state).
+ *       interrupted â€” resume?"); in AUTO mode, to IDLE (NOTIFIED
+ *       has no AUTO-mode exit â€” a stranded state).
  *
  *  Everything else stands as v1.1 (see that header's contract).
  *
  *  Revision history:
- *    v1.2 — the consent deltas (the compare; POLICY 1; the
+ *    v1.2 â€” the consent deltas (the compare; POLICY 1; the
  *           NOTIFIED re-accept; the WATCHDOG resume shape).
- *    v1.1 — the string-version ripple.
- *    v1.0 — first delivery.
+ *    v1.1 â€” the string-version ripple.
+ *    v1.0 â€” first delivery.
  */
 
 #ifndef APP_FOTA_NET_H_
@@ -59,12 +59,12 @@ typedef enum
 } APP_FOTA_NET_State_t;
 
 /* =====================================================================
- *  THE VERSION COMPARE (FOTA-49 delta 1) — public, one truth
+ *  THE VERSION COMPARE (FOTA-49 delta 1) â€” public, one truth
  *
  *  Returns 1 iff Copy_pchNew is STRICTLY NEWER than Copy_pchRunning
  *  (numeric per component; missing components = 0; leading zeros
  *  tolerated; any non-digit component ends that component's number
- *  — the defensive parse). The lexical trap is closed:
+ *  â€” the defensive parse). The lexical trap is closed:
  *  "10.0.0" > "7.0.0" returns 1 here, though lexically it is not.
  * ===================================================================== */
 u8 APP_FOTA_NET_u8VersionNewer(const char *Copy_pchNew,
@@ -79,7 +79,7 @@ NET_EnumStatus_t APP_FOTA_NET_enumInit(const char *Copy_pchThisVersion);
  * runs the UI's beep engine. */
 void APP_FOTA_NET_voidTask(void);
 
-/* THE EVENT ENTRY — the single NET event drainer calls this with
+/* THE EVENT ENTRY â€” the single NET event drainer calls this with
  * EVERY event it drains (the orchestrator filters). */
 void APP_FOTA_NET_voidOnEvent(const NET_Event_t *Copy_pstEvent);
 
@@ -94,7 +94,7 @@ NET_EnumStatus_t APP_FOTA_NET_enumStart(void);
 APP_FOTA_NET_State_t APP_FOTA_NET_enumGetState(void);
 
 /* R5: 1 = the last ladder failure was STAGE_CRC_FAIL (the ESP-side
- * stage is bad; the recorded remedy is FRESET + re-BEGIN — the hub
+ * stage is bad; the recorded remedy is FRESET + re-BEGIN â€” the hub
  * day's recovery path, gated on the human's retry press). */
 u8 APP_FOTA_NET_u8StageCrcStuck(void);
 

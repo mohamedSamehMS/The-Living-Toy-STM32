@@ -3,26 +3,26 @@
  *
  *  Implementation of the ST7735 TFT HAL driver (1.8", 128x160, RGB565).
  *
- *  ARCHITECTURE — three layers inside this file, bottom to top:
- *    1. TRANSACTION layer: WriteCommand / WriteData / WriteData16 —
+ *  ARCHITECTURE â€” three layers inside this file, bottom to top:
+ *    1. TRANSACTION layer: WriteCommand / WriteData / WriteData16 â€”
  *       the SPI protocol pattern every panel access reduces to.
- *    2. WINDOW layer: SetWindow — programs a rectangle in GRAM and
+ *    2. WINDOW layer: SetWindow â€” programs a rectangle in GRAM and
  *       opens it with RAMWR; everything after is a raw pixel stream.
- *    3. DRAWING layer: FillRect and everything built on it — fills,
+ *    3. DRAWING layer: FillRect and everything built on it â€” fills,
  *       lines, shapes, text. All drawing reduces to streams into
  *       windows; nothing draws per-pixel except true diagonals.
  *
- *  MCAL dependencies: MGPIO (control pins — atomic BSRR value writes
+ *  MCAL dependencies: MGPIO (control pins â€” atomic BSRR value writes
  *  only, so this driver is safe against ISRs on the same port),
  *  MSPI (blocking byte transport), MSYSTICK (init delays).
  *  No direct register access from this layer.
  *
  *  RAM footprint: the 64-pixel glyph scratch buffer below (128 bytes)
- *  is the driver's ENTIRE RAM usage. No framebuffer — see the
+ *  is the driver's ENTIRE RAM usage. No framebuffer â€” see the
  *  architecture note in HTFT_interface.h for how redraw works.
  *
  *  Init table: { command, dataCount, delayMs, data bytes... } records,
- *  terminated by a lone 0x00 (command NOP — safe sentinel, cannot
+ *  terminated by a lone 0x00 (command NOP â€” safe sentinel, cannot
  *  collide with any real entry). Values are the well-proven
  *  Adafruit ST7735R register set; per-panel variant bits come from
  *  HTFT_config.h (inversion) and HTFT_private.h (MADCTL/COLMOD).
@@ -56,14 +56,14 @@ static void HTFT_voidSetWindow(u16 Copy_u16X0, u16 Copy_u16Y0,
 static void HTFT_voidRunInitSequence(void);
 static s32 HTFT_s32ISqrt(s32 Copy_s32Value);   /* integer floor sqrt */
 /* ------------------------------------------------------------------ *
- *  INIT SEQUENCE — see the register annotations on each line.
+ *  INIT SEQUENCE â€” see the register annotations on each line.
  *  Delay unit: milliseconds, applied AFTER the command's data.
  * ------------------------------------------------------------------ */
 static const u8 HTFT_AU8InitSequence[] =
 {
-    0x01, 0, 150,                                 /* SWRESET — full internal
+    0x01, 0, 150,                                 /* SWRESET â€” full internal
                                                      reset, long settle       */
-    0x11, 0, 255,                                 /* SLPOUT — exit sleep; the
+    0x11, 0, 255,                                 /* SLPOUT â€” exit sleep; the
                                                      datasheet's longest wait
                                                      belongs here             */
     0xB1, 3, 0,   0x01, 0x2C, 0x2D,               /* frame rate, normal mode  */
@@ -72,40 +72,40 @@ static const u8 HTFT_AU8InitSequence[] =
                   0x01, 0x2C, 0x2D,               /* frame rate, idle mode    */
     0xB4, 1, 0,   0x07,                           /* LCD inversion polarity
                                                      (line vs frame inversion)*/
-    0xC0, 3, 0,   0xA2, 0x02, 0x84,               /* power control 1 — GVDD /
+    0xC0, 3, 0,   0xA2, 0x02, 0x84,               /* power control 1 â€” GVDD /
                                                      VRH analog voltages      */
-    0xC1, 1, 0,   0xC5,                           /* power control 2 — VGH/VGL*/
-    0xC2, 2, 0,   0x0A, 0x00,                     /* power control 3 — normal
+    0xC1, 1, 0,   0xC5,                           /* power control 2 â€” VGH/VGL*/
+    0xC2, 2, 0,   0x0A, 0x00,                     /* power control 3 â€” normal
                                                      + idle mode currents     */
-    0xC3, 2, 0,   0x8A, 0x2A,                     /* power control 4 — partial*/
-    0xC4, 2, 0,   0x8A, 0xEE,                     /* power control 5 — idle   */
-    0xC5, 1, 0,   0x0E,                           /* VCOM voltage — panel
+    0xC3, 2, 0,   0x8A, 0x2A,                     /* power control 4 â€” partial*/
+    0xC4, 2, 0,   0x8A, 0xEE,                     /* power control 5 â€” idle   */
+    0xC5, 1, 0,   0x0E,                           /* VCOM voltage â€” panel
                                                      specific; wrong VCOM =
                                                      washed-out or dark image */
-    HTFT_INVERSION_CMD, 0, 0,                     /* INVON/INVOFF — selected by
+    HTFT_INVERSION_CMD, 0, 0,                     /* INVON/INVOFF â€” selected by
                                                      the tab type in config:
                                                      this panel (black tab)
                                                      needs inversion ON, or
                                                      every color renders
                                                      negated                  */
-    0x36, 1, 0,   HTFT_MADCTL_VALUE,              /* MADCTL — orientation +
+    0x36, 1, 0,   HTFT_MADCTL_VALUE,              /* MADCTL â€” orientation +
                                                      color order; see the bit
                                                      table in HTFT_private.h  */
-    0x3A, 1, 0,   HTFT_COLMOD_VALUE,              /* COLMOD — 16bpp RGB565
+    0x3A, 1, 0,   HTFT_COLMOD_VALUE,              /* COLMOD â€” 16bpp RGB565
                                                      (0x05: ST7735 encoding!) */
     0xE0, 16, 0,  0x02, 0x1C, 0x07, 0x12, 0x37, 0x32, 0x29, 0x2D,
                   0x29, 0x25, 0x2B, 0x39, 0x00, 0x01, 0x03, 0x10,
-                                                  /* positive gamma curve —
+                                                  /* positive gamma curve â€”
                                                      grayscale response       */
     0xE1, 16, 0,  0x03, 0x1D, 0x07, 0x06, 0x2E, 0x2C, 0x29, 0x2D,
                   0x2E, 0x2E, 0x37, 0x3F, 0x00, 0x07, 0x07, 0x08,
-                                                  /* negative gamma curve —
+                                                  /* negative gamma curve â€”
                                                      must mirror E0           */
-    0x13, 0, 10,                                  /* NORON — normal display
+    0x13, 0, 10,                                  /* NORON â€” normal display
                                                      mode (vs partial mode)   */
-    0x29, 0, 100,                                 /* DISPON — turn the panel
+    0x29, 0, 100,                                 /* DISPON â€” turn the panel
                                                      on; settle before use    */
-    0x00, 0, 0                                    /* terminator — NOP         */
+    0x00, 0, 0                                    /* terminator â€” NOP         */
 };
 
 /* ------------------------------------------------------------------ *
@@ -138,7 +138,7 @@ void HTFT_voidInit(void)
     /* ---- 2. Hardware reset pulse ----
      * RST is held high first so the pulse starts from a known state.
      * Datasheet needs only 10 us low; we hold 10 ms. The 120 ms settle
-     * after release is the real requirement — during it the panel
+     * after release is the real requirement â€” during it the panel
      * reloads its own defaults and IGNORES commands. Skipping these
      * delays is the #1 cause of "backlight on, screen dead".        */
     (void)MGPIO_SetPinValue(HTFT_RST_PORT, HTFT_RST_PIN, MGPIO_PIN_HIGH);
@@ -160,7 +160,7 @@ void HTFT_voidFillRect(u16 Copy_u16X, u16 Copy_u16Y,
 
     if ((Copy_u16Width == 0) || (Copy_u16Height == 0))
     {
-        return;   /* degenerate rectangle — nothing to stream */
+        return;   /* degenerate rectangle â€” nothing to stream */
     }
 
 #if HTFT_ENABLE_BOUNDS_CHECK
@@ -187,7 +187,7 @@ void HTFT_voidFillRect(u16 Copy_u16X, u16 Copy_u16Y,
     Local_u32Pixels = (u32)Copy_u16Width * (u32)Copy_u16Height;
 
     /* Extended transaction: CS stays LOW and DC stays HIGH for the
-     * ENTIRE stream — one transaction for all pixels, not one per
+     * ENTIRE stream â€” one transaction for all pixels, not one per
      * byte. This is the single biggest performance decision in the
      * driver: raising CS per byte would ~5x every fill.             */
     (void)MGPIO_SetPinValue(HTFT_CS_PORT, HTFT_CS_PIN, MGPIO_PIN_LOW);
@@ -223,7 +223,7 @@ void HTFT_voidFillScreen(u16 Copy_u16Color)
 
 void HTFT_voidDrawPixel(u16 Copy_u16X, u16 Copy_u16Y, u16 Copy_u16Color)
 {
-    /* A 1x1 fill pays the full window-setup cost for one pixel —
+    /* A 1x1 fill pays the full window-setup cost for one pixel â€”
      * correct, uniform, and deliberately the only implementation.
      * No duplicate byte-streaming code anywhere in the driver.      */
     HTFT_voidFillRect(Copy_u16X, Copy_u16Y, 1u, 1u, Copy_u16Color);
@@ -262,7 +262,7 @@ void HTFT_voidDrawLine(u16 Copy_u16X0, u16 Copy_u16Y0,
     s32 Local_s32Dx, Local_s32Dy, Local_s32Sx, Local_s32Sy, Local_s32Err, Local_s32E2;
     u16 Local_u16X, Local_u16Y;
 
-    /* Fast paths: axis-aligned lines never enter Bresenham — they
+    /* Fast paths: axis-aligned lines never enter Bresenham â€” they
      * become single fill streams. (X0/X1 or Y0/Y1 equal -> horizontal
      * or vertical, regardless of endpoint order.)                   */
     if (Copy_u16Y0 == Copy_u16Y1)
@@ -284,14 +284,14 @@ void HTFT_voidDrawLine(u16 Copy_u16X0, u16 Copy_u16Y0,
         return;
     }
 
-    /* Bresenham integer line — works from any endpoint toward any
+    /* Bresenham integer line â€” works from any endpoint toward any
      * other (all four diagonal directions), no floating point, no
      * multiplication. s32 math because differences can be negative.
      *
      * The classic trick below: Dy is NEGATED after taking |Dx|,|Dy|,
      * and the error term starts at Dx + Dy. This formulation makes
      * one 'err' comparison drive BOTH axis steps in the standard
-     * "all-octants" form — E2 >= Dy steps x, E2 <= Dx steps y (Dy
+     * "all-octants" form â€” E2 >= Dy steps x, E2 <= Dx steps y (Dy
      * being negative, >= and <= compare against opposite signs).   */
     Local_s32Sx = (Copy_u16X1 > Copy_u16X0) ? 1 : -1;
     Local_s32Sy = (Copy_u16Y1 > Copy_u16Y0) ? 1 : -1;
@@ -309,7 +309,7 @@ void HTFT_voidDrawLine(u16 Copy_u16X0, u16 Copy_u16Y0,
         HTFT_voidDrawPixel(Local_u16X, Local_u16Y, Copy_u16Color);
         if ((Local_u16X == Copy_u16X1) && (Local_u16Y == Copy_u16Y1))
         {
-            break;   /* endpoint reached — always terminates exactly */
+            break;   /* endpoint reached â€” always terminates exactly */
         }
         Local_s32E2 = 2 * Local_s32Err;
         if (Local_s32E2 >= Local_s32Dy)
@@ -326,18 +326,18 @@ void HTFT_voidDrawLine(u16 Copy_u16X0, u16 Copy_u16Y0,
 }
 
 /* ------------------------------------------------------------------ *
- *  PRIVATE FUNCTIONS — transaction / window layers                  *
+ *  PRIVATE FUNCTIONS â€” transaction / window layers                  *
  *                                                                    *
  *  PROTOCOL PATTERN: every single-byte panel access is one           *
  *  transaction:                                                      *
- *      1. CS LOW     — panel listens                                 *
- *      2. DC level   — LOW: a command byte follows                   *
+ *      1. CS LOW     â€” panel listens                                 *
+ *      2. DC level   â€” LOW: a command byte follows                   *
  *                      HIGH: a data byte follows                     *
- *      3. one byte   — blocking send (MSPI's round trip guarantees   *
+ *      3. one byte   â€” blocking send (MSPI's round trip guarantees   *
  *                      the byte is fully clocked before we return)   *
- *      4. CS HIGH    — panel processes                               *
+ *      4. CS HIGH    â€” panel processes                               *
  *  Multi-byte streams (fills, glyphs) keep CS low and DC high across *
- *  the whole stream — see FillRect.                                  *
+ *  the whole stream â€” see FillRect.                                  *
  * ------------------------------------------------------------------ */
 
 static void HTFT_voidDelayMs(u32 Copy_u32Ms)
@@ -345,7 +345,7 @@ static void HTFT_voidDelayMs(u32 Copy_u32Ms)
     /* Thin wrapper: keeps every ms delay in the driver routed through
      * the same call, so swapping in a different time source later is
      * a one-line change. Rev 3 note: returns MSYSTICK_NOT_INITIALIZED
-     * and does NOT wait if Init never ran — the HTFT init contract
+     * and does NOT wait if Init never ran â€” the HTFT init contract
      * (interface header) requires MSYSTICK_Init() first, so a hang is
      * impossible and the status is safely discardable here.          */
     (void)MSYSTICK_SetBusyWait_ms(Copy_u32Ms);
@@ -378,7 +378,7 @@ static void HTFT_voidWriteData16(u16 Copy_u16Data)
 }
 
 /* Stream an RGB565 array into a previously-programmed window.
- * Caller must have just called SetWindow — this function only opens
+ * Caller must have just called SetWindow â€” this function only opens
  * the extended transaction (CS low, DC high) and pushes bytes.      */
 static void HTFT_voidWritePixels(const u16 *Copy_pu16Pixels, u32 Copy_u32Count)
 {
@@ -407,7 +407,7 @@ static void HTFT_voidSetWindow(u16 Copy_u16X0, u16 Copy_u16Y0,
      *  2. GRAM OFFSETS (green-tab panels): the visible area starts a
      *     couple of pixels inside GRAM. Offsets are added HERE so all
      *     drawing code above stays in clean 0..127 / 0..159 screen
-     *     coordinates. This panel (black tab) uses (0,0) — the code
+     *     coordinates. This panel (black tab) uses (0,0) â€” the code
      *     path is still exercised and harmless.                     */
     Copy_u16X0 = (u16)(Copy_u16X0 + HTFT_COL_OFFSET);
     Copy_u16X1 = (u16)(Copy_u16X1 + HTFT_COL_OFFSET);
@@ -459,10 +459,10 @@ static void HTFT_voidRunInitSequence(void)
  *  TEXT RENDERING                                                    *
  *                                                                    *
  *  One character = one 8x8 window + one 64-pixel stream. The glyph   *
- *  is expanded from 1-bpp to RGB565 in a scratch buffer FIRST —      *
+ *  is expanded from 1-bpp to RGB565 in a scratch buffer FIRST â€”      *
  *  the alternative (a window setup per pixel) would be ~64x slower.  *
  *                                                                    *
- *  Cells are OPAQUE (background drawn too) — which makes redrawing   *
+ *  Cells are OPAQUE (background drawn too) â€” which makes redrawing   *
  *  a cell the erase mechanism: scores, timers, and cursors update    *
  *  by overwriting exactly their own cells. This is the partial-      *
  *  redraw discipline the whole no-framebuffer design rests on.       *
@@ -477,7 +477,7 @@ void HTFT_voidDrawChar(u16 Copy_u16X, u16 Copy_u16Y, u8 Copy_u8Char,
     const u8 *Local_pu8Glyph;
     u8 Local_u8Row, Local_u8Col;
 
-    /* Range gate BEFORE indexing the font table — chars outside
+    /* Range gate BEFORE indexing the font table â€” chars outside
      * 0x20..0x5F (notably lowercase) render as blanks instead of
      * reading out of bounds. Widen this check when the table grows. */
     if ((Copy_u8Char < 0x20u) || (Copy_u8Char > 0x5Fu))
@@ -487,7 +487,7 @@ void HTFT_voidDrawChar(u16 Copy_u16X, u16 Copy_u16Y, u8 Copy_u8Char,
     Local_pu8Glyph = HTFT_AU8Font[Copy_u8Char - 0x20u];
 
     /* Expand: each set bit -> Fg, each clear bit -> Bg. Bit 7 of the
-     * glyph byte is the LEFTMOST pixel (see HTFT_font.h encoding) —
+     * glyph byte is the LEFTMOST pixel (see HTFT_font.h encoding) â€”
      * the 0x80 >> col mask walks bits left to right. Including the
      * background bits is what makes cells opaque/erasable.          */
     for (Local_u8Row = 0; Local_u8Row < 8u; Local_u8Row++)
@@ -500,7 +500,7 @@ void HTFT_voidDrawChar(u16 Copy_u16X, u16 Copy_u16Y, u8 Copy_u8Char,
         }
     }
 
-    /* One window, one stream — the whole character in one shot.     */
+    /* One window, one stream â€” the whole character in one shot.     */
     HTFT_voidSetWindow(Copy_u16X, Copy_u16Y,
                        (u16)(Copy_u16X + 7u), (u16)(Copy_u16Y + 7u));
     HTFT_voidWritePixels(HTFT_AU16GlyphBuffer, 64u);
@@ -509,7 +509,7 @@ void HTFT_voidDrawChar(u16 Copy_u16X, u16 Copy_u16Y, u8 Copy_u8Char,
 void HTFT_voidDrawString(u16 Copy_u16X, u16 Copy_u16Y, const char *Copy_chString,
                          u16 Copy_u16Fg, u16 Copy_u16Bg)
 {
-    /* Fixed 8-px advance — including for the 6-px glyphs — because
+    /* Fixed 8-px advance â€” including for the 6-px glyphs â€” because
      * the 2-px gap is baked into the cell. Fixed pitch also means a
      * character's screen position never depends on what came before
      * it: the timer-overwrite trick (redraw the same string in the
@@ -526,18 +526,18 @@ void HTFT_voidDrawString(u16 Copy_u16X, u16 Copy_u16Y, const char *Copy_chString
  *  GRAPHICS EXTENSIONS                                               *
  *                                                                    *
  *  Correctness rule for this section: every function uses ONLY the   *
- *  transaction shapes already proven on hardware —                  *
+ *  transaction shapes already proven on hardware â€”                  *
  *    DrawChar2x / DrawImage : one window + ONE pixel stream          *
  *    DrawSprite             : HLine fast paths only                  *
  *    FillCircle             : HLine fast paths only                  *
  *    DrawCircle             : DrawPixel only                         *
  *  (The 2x buffer exists specifically to keep the one-stream rule:   *
  *  streaming row-by-row across CS toggles would depend on the GRAM   *
- *  write pointer persisting between transactions — undocumented      *
+ *  write pointer persisting between transactions â€” undocumented      *
  *  controller behavior we have never needed to rely on.)             *
  * ------------------------------------------------------------------ */
 
-/* 16x16 RGB565 expansion of one glyph — 512 bytes. Driver RAM total
+/* 16x16 RGB565 expansion of one glyph â€” 512 bytes. Driver RAM total
  * is now 640 bytes (128-byte 1x buffer + this). Still no framebuffer. */
 static u16 HTFT_AU16Glyph2xBuffer[256];
 
@@ -556,7 +556,7 @@ void HTFT_voidDrawChar2x(u16 Copy_u16X, u16 Copy_u16Y, u8 Copy_u8Char,
     /* Expand 8x8 glyph -> 16x16: every bit becomes a 2x2 block.
      * Row index = (2*row + rep), column index = (2*col + dup).
      * The zero bits 1..0 of each byte scale into the 4-px right gap,
-     * and the zero row 7 into the 2-px bottom gap — spacing scales. */
+     * and the zero row 7 into the 2-px bottom gap â€” spacing scales. */
     for (Local_u16Row = 0u; Local_u16Row < 8u; Local_u16Row++)
     {
         for (Local_u16Rep = 0u; Local_u16Rep < 2u; Local_u16Rep++)
@@ -599,7 +599,7 @@ void HTFT_voidDrawImage(u16 Copy_u16X, u16 Copy_u16Y,
         return;
     }
 
-    /* Exactly FillRect's proven shape — the source is an array
+    /* Exactly FillRect's proven shape â€” the source is an array
      * instead of a repeated constant. Row-major pixel order matches
      * the window's left->right, top->bottom auto-advance.           */
     HTFT_voidSetWindow(Copy_u16X, Copy_u16Y,
@@ -618,7 +618,7 @@ void HTFT_voidDrawSprite(u16 Copy_u16X, u16 Copy_u16Y,
     /* Transparent compositing WITHOUT readback: only set bits are
      * written, so whatever is already on screen shows through the
      * holes. Each run of consecutive set bits in a row becomes ONE
-     * HLine — a typical icon is a handful of streams per row.       */
+     * HLine â€” a typical icon is a handful of streams per row.       */
     for (Local_u16Row = 0u; Local_u16Row < Copy_u16Height; Local_u16Row++)
     {
         const u8 *Local_pu8Row =
@@ -629,7 +629,7 @@ void HTFT_voidDrawSprite(u16 Copy_u16X, u16 Copy_u16Y,
         {
             if ((Local_pu8Row[Local_u16Col >> 3] & (u8)(0x80u >> (Local_u16Col & 7u))) != 0u)
             {
-                /* run start found — extend to the last set bit       */
+                /* run start found â€” extend to the last set bit       */
                 u16 Local_u16RunStart = Local_u16Col;
                 while ((Local_u16Col < Copy_u16Width) &&
                        ((Local_pu8Row[Local_u16Col >> 3] & (u8)(0x80u >> (Local_u16Col & 7u))) != 0u))
@@ -643,13 +643,13 @@ void HTFT_voidDrawSprite(u16 Copy_u16X, u16 Copy_u16Y,
             }
             else
             {
-                Local_u16Col++;   /* transparent pixel — skip, do not write */
+                Local_u16Col++;   /* transparent pixel â€” skip, do not write */
             }
         }
     }
 }
 
-/* Integer floor square root — avoids float anywhere in the driver.
+/* Integer floor square root â€” avoids float anywhere in the driver.
  * Only ever fed values <= ~6400 (radius squared), far inside s32.   */
 static s32 HTFT_s32ISqrt(s32 Copy_s32Value)
 {
@@ -681,7 +681,7 @@ void HTFT_voidFillCircle(u16 Copy_u16X0, u16 Copy_u16Y0,
     /* Each screen row within the circle is one horizontal span:
      * half-width = sqrt(r^2 - dy^2). One HLine per row -> all fast
      * paths. Small radii come out slightly "diamond" at the extreme
-     * rows — that is normal discrete rasterization, not a bug.      */
+     * rows â€” that is normal discrete rasterization, not a bug.      */
     for (Local_s32Dy = -(s32)Copy_u16Radius; Local_s32Dy <= (s32)Copy_u16Radius; Local_s32Dy++)
     {
         s32 Local_s32Dx = HTFT_s32ISqrt(((s32)Copy_u16Radius * (s32)Copy_u16Radius)
@@ -701,7 +701,7 @@ void HTFT_voidDrawCircle(u16 Copy_u16X0, u16 Copy_u16Y0,
     s32 Local_s32Error = 1 - Local_s32X;
 
     /* Midpoint circle: walks one octant, mirrors to all eight via
-     * symmetry — no floating point, no multiplication. Every plotted
+     * symmetry â€” no floating point, no multiplication. Every plotted
      * point pays a full window setup (it IS DrawPixel), which is why
      * this is the driver's slowest primitive: fine for decoration
      * drawn once, wrong for anything animated.                      */

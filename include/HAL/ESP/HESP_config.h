@@ -1,5 +1,5 @@
 /*
- * HESP_config.h — tunables of the ESP8266 link HAL (L1 v1).
+ * HESP_config.h â€” tunables of the ESP8266 link HAL (L1 v1).
  *
  *  RX sizing rule (invariant 4): rate (11520 B/s at 115200 8N1) x
  *  worst loop stall. 1024 covers all realistic v1 bursts; a full-
@@ -27,7 +27,7 @@
 /* ---- test-only injection path ----
  * Stays 1 in bench builds: the SINGLE-IMAGE bench gates injection at
  * RUNTIME (RUN A feeds it directly); production code never arms it.
- * The link-time-loud property is traded for no-reflash by design —
+ * The link-time-loud property is traded for no-reflash by design â€”
  * the runtime refusal replaces it.                                   */
 #define HESP_DEBUG_INJECT_ENABLE 1
 

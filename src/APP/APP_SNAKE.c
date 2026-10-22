@@ -1,5 +1,5 @@
 /*
- * APP_SNAKE.c � the Snake game module: FSM + logic, absorbed from the
+ * APP_SNAKE.c - the Snake game module: FSM + logic, absorbed from the
  *  hardware-proven standalone Snake v1.0 main.
  *  LOCATION: APP/ (flat).
  *
@@ -11,10 +11,10 @@
  *  GameResult_t when done. That is the entire integration surface.
  *
  *  THE SIX DELTAS FROM THE STANDALONE v1.0 main (each is a direct
- *  consequence of the hub architecture � the engine itself was NOT
+ *  consequence of the hub architecture - the engine itself was NOT
  *  touched; the tick/queue/food/collision code below is the code
  *  that passed on hardware):
- *    1. NO BOOT STATE. The hub's menu already selected this game �
+ *    1. NO BOOT STATE. The hub's menu already selected this game -
  *       Run entry IS the start. The old "CH OR 0 TO START" screen
  *       and its CONFIRM wait are gone.
  *    2. NO GAMEOVER SCREEN. Death runs its blink+hold, then RETURNS
@@ -23,7 +23,7 @@
  *    3. RNG SEEDED AT RUN ENTRY. The old BOOT state seeded on the
  *       first CONFIRM press (human reaction = entropy). In the hub
  *       world the equivalent entropy is the menu-navigation time
- *       before launch � elapsed ms at Run entry. Different every
+ *       before launch - elapsed ms at Run entry. Different every
  *       launch, zero extra states.
  *    4. BACK = EXIT ASK (the exit seam). Standalone v1.0 restarted
  *       instantly on BACK; the hub needs an EXIT path, so BACK opens
@@ -38,31 +38,31 @@
  *       finally live), NORMAL = the proven defaults, HARD = fast
  *       floor + solid walls.
  *    6. HI BELONGS TO THE STORE. This module never writes high
- *       scores � it only READS the store's HI for the in-game HUD.
+ *       scores - it only READS the store's HI for the in-game HUD.
  *       The hub writes it once, after GAMEOVER. One writer, one
  *       truth (the APP_STORE ownership rule).
  *
  *  DESIGN PRINCIPLES (documented, deliberate):
  *
- *  1. RUN OWNS THE LOOP � see the header. The ~270 ms IR stall per
+ *  1. RUN OWNS THE LOOP - see the header. The ~270 ms IR stall per
  *     fresh press happens inside this loop, exactly where the
  *     standalone build proved it graceful: the world freezes one
  *     beat, SysTick and every ISR run right through it, held D-pad
  *     repeats (~11 ms each) ARE the glide.
- *  2. ABSORBED, NOT REWRITTEN � the engine's order of operations,
+ *  2. ABSORBED, NOT REWRITTEN - the engine's order of operations,
  *     thresholds, and laws are byte-for-byte the tested build's.
- *  3. THE SCREEN IS A CACHE OF STATE � every pixel is regenerable
+ *  3. THE SCREEN IS A CACHE OF STATE - every pixel is regenerable
  *     from the module's statics; Snk_voidRepaintAll() is the proof
  *     and the tool. That is what makes pause and the exit overlay
  *     trivial: repaint, never "restore".
- *  4. TWO-TONE AT BIRTH � each body cell's tone is assigned when the
+ *  4. TWO-TONE AT BIRTH - each body cell's tone is assigned when the
  *     cell is created and NEVER recomputed, so growth ticks cannot
  *     strobe the pattern (the documented trap). The tone is stored
  *     per ring slot so RepaintAll reproduces the exact stripes.
- *  5. SKIP-LATE TIMING � a late tick fires once and rebases; time
+ *  5. SKIP-LATE TIMING - a late tick fires once and rebases; time
  *     lost to a stall is skipped, never burst-caught-up.
  *
- *  STATE MACHINE (4 states � the hub owns boot and game-over):
+ *  STATE MACHINE (4 states - the hub owns boot and game-over):
  *      SNK_RUN -> SNK_PAUSE (START) -> SNK_RUN (START)
  *      SNK_RUN / SNK_PAUSE -> SNK_EXIT_ASK (BACK)
  *          -> returns EXITED (BACK) | resumes (timeout/other)
@@ -81,7 +81,7 @@
 #include "APP/SNAKE_config.h"
 #include "HAL/AUDIO/HAUDIO_interface.h"
 
-/* Direction encoding. The ^1 trick: opposite = dir ^ 1 � UP/DOWN and
+/* Direction encoding. The ^1 trick: opposite = dir ^ 1 - UP/DOWN and
  * LEFT/RIGHT are adjacent pairs, so a reversal check is one XOR.   */
 #define DIR_UP              0u
 #define DIR_DOWN            1u
@@ -89,11 +89,11 @@
 #define DIR_RIGHT           3u
 
 /* Ring capacity = whole field (270 cells). Memory cost: 3 arrays of
- * 270 bytes � the price of O(1) head/tail moves and full-state
+ * 270 bytes - the price of O(1) head/tail moves and full-state
  * repaint. Trivial against 64 KB.                                  */
 #define SNAKE_BODY_MAX      (SNAKE_FIELD_COLS * SNAKE_FIELD_ROWS)
 
-/* Death choreography � the frozen world, the deliberate flicker law
+/* Death choreography - the frozen world, the deliberate flicker law
  * (same-cell timed toggle), and the hold before the handoff.       */
 #define SNAKE_DEATH_BLINKS  3u
 #define SNAKE_DEATH_STEP_MS 150u
@@ -106,7 +106,7 @@ typedef enum { SNK_RUN = 0, SNK_PAUSE, SNK_DYING, SNK_EXIT_ASK } Snk_State_t;
 
 /* ---- module state (all file-private, the whole game in ~1 KB) --- */
 
-/* Runtime difficulty � seeded by enumInit from the APP_STORE setting.
+/* Runtime difficulty - seeded by enumInit from the APP_STORE setting.
  * THE designed zone-1 RAM migration, fed by the hub Settings screen:
  * the SNAKE_config.h compile-time values remain the NORMAL preset's
  * definition; everything else is mapped here.                       */
@@ -115,16 +115,16 @@ static struct { u16 TickBase; u16 TickMin; u8 Speedup; u8 WallsHard; } Snk_stCfg
 static Snk_State_t Snk_eState;              /* the FSM                  */
 
 /* The body: a RING of (col,row,tone) slots. Cells never move in the
- * ring � the HEAD INDEX advances; cells enter at the new head slot
+ * ring - the HEAD INDEX advances; cells enter at the new head slot
  * and leave by falling out of the live window. Cell i behind the
  * head lives at slot (Head + MAX - i) % MAX; the tail is i = Len-1.
- * Stale slots past the window need no clearing � Len bounds reads.  */
+ * Stale slots past the window need no clearing - Len bounds reads.  */
 static u8  Snk_Au8Col[SNAKE_BODY_MAX];
 static u8  Snk_Au8Row[SNAKE_BODY_MAX];
 static u8  Snk_Au8Tone[SNAKE_BODY_MAX];     /* BODY_A / BODY_B per slot */
 static u16 Snk_u16Head, Snk_u16Len;
 
-/* Direction queue � the 2-deep fairness rule: a queued direction is
+/* Direction queue - the 2-deep fairness rule: a queued direction is
  * validated against the LAST QUEUED (or current) direction, so two
  * fast presses both land (UP then LEFT while moving RIGHT = two
  * turns, not one), and reversals are rejected at PUSH time.        */
@@ -155,12 +155,12 @@ static u32 Snk_u32Rand(void)
   return (Snk_u32RandState >> 16u); }
 
 /* ------------------------------------------------------------------ *
- *  Body query � with THE tail-vacating exception.                     *
+ *  Body query - with THE tail-vacating exception.                     *
  *  IgnoreTail=1 skips the last cell: the tail vacates THIS tick
  *  (moves away), so the head may legally move into it. The caller
- *  passes IgnoreTail only when the snake is NOT growing this tick �
+ *  passes IgnoreTail only when the snake is NOT growing this tick -
  *  on a growth tick the tail stays put and its cell is lethal.      *
- *  Cost: O(Len) � at most 270 compares, once per tick.              */
+ *  Cost: O(Len) - at most 270 compares, once per tick.              */
 static u8 Snk_u8BodyAt(s16 Copy_s16Col, s16 Copy_s16Row, u8 Copy_u8IgnoreTail)
 {
     u16 Local_u16I;
@@ -175,7 +175,7 @@ static u8 Snk_u8BodyAt(s16 Copy_s16Col, s16 Copy_s16Row, u8 Copy_u8IgnoreTail)
     return 0u;
 }
 
-/* Direction queue push � the fairness rule. Reference direction is
+/* Direction queue push - the fairness rule. Reference direction is
  * the queue's LAST entry if any (so chains validate against each
  * other), else the current motion. Reject: same direction (no-op)
  * and reversal (would be an instant 180). Queue depth 2 = the
@@ -192,7 +192,7 @@ static void Snk_voidQueueDir(u8 Copy_u8Dir)
 
 /* Food placement: rejection sampling over the field (cheap: the body
  * rarely covers a meaningful fraction). Fallback: a linear scan from
- * a random start � guarantees termination even at extreme lengths.
+ * a random start - guarantees termination even at extreme lengths.
  * Degenerate "board full" leaves FoodOn=0 and the game simply runs
  * on (documented edge: unreachable in practice at 270 cells).       */
 static void Snk_voidSpawnFood(void)
@@ -223,9 +223,9 @@ static void Snk_voidSpawnFood(void)
     SNAKE_voidPaintCell(Snk_u8FoodCol, Snk_u8FoodRow, SNAKE_CELL_FOOD);
 }
 
-/* Full repaint from state � the screen-is-cache law made executable.
+/* Full repaint from state - the screen-is-cache law made executable.
  * Wipes everything, then rebuilds border, HUD, body (each slot's
- * STORED tone � the stripes come back exactly), and food. This one
+ * STORED tone - the stripes come back exactly), and food. This one
  * function is why pause/resume and exit-ask need no "restore" logic
  * of any kind: overlays are removed by regenerating what was there. */
 static void Snk_voidRepaintAll(void)
@@ -234,7 +234,7 @@ static void Snk_voidRepaintAll(void)
     SNAKE_voidPaintField((u8)Snk_stCfg.WallsHard);   /* CHANGED: border only
                                           when walls are solid (EASY = open) */
     SNAKE_voidPaintScore(Snk_u16Score);
-    SNAKE_voidPaintHi(APP_STORE_u16GetHi(0u));   /* display only � the
+    SNAKE_voidPaintHi(APP_STORE_u16GetHi(0u));   /* display only - the
                                                    store owns the record */
     for (Local_u16I = 0u; Local_u16I < Snk_u16Len; Local_u16I++)
     {
@@ -264,7 +264,7 @@ static void Snk_voidNewGame(u32 Copy_u32Now)
     Snk_Au8Tone[1] = SNAKE_CELL_BODY_B;
     Snk_u8DirCur = DIR_RIGHT;  Snk_u8DirQLen = 0u;
     Snk_u16Score = 0u;
-    Snk_u8FoodOn = 0u;                        /* NEW � kill the previous game's
+    Snk_u8FoodOn = 0u;                        /* NEW - kill the previous game's
                                                       food BEFORE the repaint, or
                                                       RepaintAll repaints it as a
                                                       ghost beside the new food   */
@@ -275,7 +275,7 @@ static void Snk_voidNewGame(u32 Copy_u32Now)
     Snk_eState = SNK_RUN;
 }
 
-/* Death: freeze the world (ticks AND the food pulse stop � the pulse
+/* Death: freeze the world (ticks AND the food pulse stop - the pulse
  * is gated on SNK_RUN in the main loop), start the blink counter.  */
 static void Snk_voidDie(u32 Copy_u32Now)
 {
@@ -286,17 +286,17 @@ static void Snk_voidDie(u32 Copy_u32Now)
 }
 
 /* ------------------------------------------------------------------ *
- *  THE TICK � one step of the world. Read in order; every section
+ *  THE TICK - one step of the world. Read in order; every section
  *  is the tested v1.0 logic, commented:
- *    1. pop one queued direction (re-validated vs actual motion �
+ *    1. pop one queued direction (re-validated vs actual motion -
  *       belt-and-braces; the push-time checks already held)
  *    2. compute the new head; wall rule: EASY wraps (two modulos),
  *       NORMAL/HARD kills (the one-branch difficulty rule)
  *    3. food check -> growth decision
  *    4. self-collision with the tail-vacating exception (exception
- *       granted ONLY when not growing � a growing tick keeps the
+ *       granted ONLY when not growing - a growing tick keeps the
  *       tail in place, so its cell is lethal)
- *    5. old head becomes BODY � tone assigned NOW, at the cell's
+ *    5. old head becomes BODY - tone assigned NOW, at the cell's
  *       birth, and stored; never recomputed (anti-strobe law)
  *    6. ring advances; new head painted (the image with eyes)
  *    7. growth: score, speed ramp (clamped to the floor), new food;
@@ -346,7 +346,7 @@ static void Snk_voidTick(void)
     if (Snk_u8BodyAt(Local_s16NewCol, Local_s16NewRow, (u8)((Local_u8Grow != 0u) ? 0u : 1u)) != 0u)
     { Snk_voidDie(MSYSTICK_GetElapsed_ms()); return; }
 
-    /* tone at birth � Len parity: flips only when a cell is born,
+    /* tone at birth - Len parity: flips only when a cell is born,
      * never en masse, so the stripes cannot strobe on growth        */
     Local_u8Tone = (Snk_u16Len & 1u) ? SNAKE_CELL_BODY_A : SNAKE_CELL_BODY_B;
     Snk_Au8Tone[Local_u16OldHead] = Local_u8Tone;
@@ -370,7 +370,7 @@ static void Snk_voidTick(void)
     {
     	/* the departing cell is ONE SLOT BEHIND the new tail:
     	 * window = Head..Head-(Len-1); departed = Head-Len.
-    	 * (Rev 1 erased Head-(Len-1) � the LIVE tail: stale trail bug) */
+    	 * (Rev 1 erased Head-(Len-1) - the LIVE tail: stale trail bug) */
     	Local_u16TailSlot = (u16)((Snk_u16Head + SNAKE_BODY_MAX - Snk_u16Len) % SNAKE_BODY_MAX);
     	SNAKE_voidPaintCell(Snk_Au8Col[Local_u16TailSlot],
     			Snk_Au8Row[Local_u16TailSlot], SNAKE_CELL_EMPTY);
@@ -380,7 +380,7 @@ static void Snk_voidTick(void)
 /* ---- the exit seam (hub delta #4) -------------------------------- */
 
 /* Overlay panel: solid backdrop + 2x title (<=7 chars) + 1x info line
- * (<=14 chars), both centered. The backdrop is the legibility fix �
+ * (<=14 chars), both centered. The backdrop is the legibility fix -
  * text drawn directly over live cells had pixels bleeding through and
  * lines wider than the screen got clipped ("START RESUME O").       */
 static void Snk_voidShowOverlay(const char *Copy_pchTitle,
@@ -402,7 +402,7 @@ static void Snk_voidShowOverlay(const char *Copy_pchTitle,
 }
 
 /* Open the exit-confirm overlay. ExitPrev remembers whether we came
- * from RUN or PAUSE � the resume path must land the player back in
+ * from RUN or PAUSE - the resume path must land the player back in
  * the exact state they left. The timer field is reused (DeathT0):
  * one u32, two phases, never simultaneous.                          */
 static void Snk_voidAskExit(u32 Copy_u32Now)
@@ -414,7 +414,7 @@ static void Snk_voidAskExit(u32 Copy_u32Now)
 }
 
 /* Leave the exit-ask state WITHOUT exiting: regenerate the world
- * (removes the overlay � the screen-is-cache law), then re-show the
+ * (removes the overlay - the screen-is-cache law), then re-show the
  * pause overlay if that is where we came from. Timers rebase so no
  * burst of ticks fires for the time spent in the ask window.        */
 static void Snk_voidResumeFromAsk(void)
@@ -436,7 +436,7 @@ static void Snk_voidResumeFromAsk(void)
 
 /* Hub calls this before EVERY Run: map the store's difficulty into
  * the runtime config. NORMAL (the default branch) reads the
- * SNAKE_config.h values themselves � the compile-time preset stays
+ * SNAKE_config.h values themselves - the compile-time preset stays
  * the definition of NORMAL, exactly as documented in the config.    */
 void APP_SNAKE_enumInit(void)
 {
@@ -452,11 +452,11 @@ void APP_SNAKE_enumInit(void)
 }
 
 /* THE game. Enters straight into a fresh game (hub delta #1: no
- * boot screen � the menu selected this game), runs the 4-state FSM
+ * boot screen - the menu selected this game), runs the 4-state FSM
  * until death completes (GAMEOVER) or the player exits (EXITED).   */
 GameResult_t APP_SNAKE_enumRun(void)
 {
-    /* Hub delta #3: seed from menu-navigation time � the human
+    /* Hub delta #3: seed from menu-navigation time - the human
      * entropy equivalent of the old first-CONFIRM press.            */
     Snk_u32RandState ^= MSYSTICK_GetElapsed_ms();
     Snk_u32RandState = (Snk_u32RandState * 1103515245u) + 12345u;
@@ -495,7 +495,7 @@ GameResult_t APP_SNAKE_enumRun(void)
                 default: break;   /* D-pad repeats ARE the glide       */
                 }
             }
-            /* state may have changed above (pause/exit) � gate the
+            /* state may have changed above (pause/exit) - gate the
              * tick so a just-paused game does not step once more    */
             if (Snk_eState == SNK_RUN)
             {
@@ -528,7 +528,7 @@ GameResult_t APP_SNAKE_enumRun(void)
             break;
 
         case SNK_DYING:
-            /* 3 head blinks (same-cell timed toggle � the deliberate
+            /* 3 head blinks (same-cell timed toggle - the deliberate
              * flicker law), then the hold, then hand off. The world
              * is frozen: nothing else in this state.                */
             if (Snk_u8DeathPhase < (2u * SNAKE_DEATH_BLINKS))
@@ -549,7 +549,7 @@ GameResult_t APP_SNAKE_enumRun(void)
             break;
         }
 
-        /* Food pulse � RUNNING-gated (freezes in PAUSE/DYING/EXIT_ASK),
+        /* Food pulse - RUNNING-gated (freezes in PAUSE/DYING/EXIT_ASK),
          * config-gated (0 = off). Same-rect repaint, no erase.      */
         if ((Snk_eState == SNK_RUN) && (Snk_u8FoodOn != 0u) && (SNAKE_CFG_FOOD_PULSE_MS != 0u))
         {
@@ -565,7 +565,7 @@ GameResult_t APP_SNAKE_enumRun(void)
         HAUDIO_voidTask();
 
         /* PC13 heartbeat: owned by the HUB's menu loop (HUB_menu.c).
-         * It pauses during a game � Run owns the loop � and resumes
+         * It pauses during a game - Run owns the loop - and resumes
          * the moment this function returns. Documented, accepted.
          * To keep it alive during play, uncomment this block:
          *

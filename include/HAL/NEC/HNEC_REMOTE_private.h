@@ -1,7 +1,7 @@
 /*
- * HNEC_REMOTE_private.h — NEC remote controller, PRIVATE header
+ * HNEC_REMOTE_private.h â€” NEC remote controller, PRIVATE header
  *
- *  Never include from application code. Private prototypes only —
+ *  Never include from application code. Private prototypes only â€”
  *  all state is file-static in HNEC_REMOTE_program.c (the MSYSTICK
  *  Rev-2 lesson: no externs in private headers).
  *
@@ -18,7 +18,7 @@
 /* The device-layer service: run HIR's decode, apply identity/policy
  * (address filter, mapping, repeat decision), store/emit the event,
  * then close the frame with the window the policy chose. The ONLY
- * place HIR_enumCloseFrame is called — the pair contract is
+ * place HIR_enumCloseFrame is called â€” the pair contract is
  * structurally guaranteed here (one straight-line path). */
 static void HNEC_REMOTE_privateService(void);
 

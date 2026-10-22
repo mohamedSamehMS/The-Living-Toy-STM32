@@ -1,18 +1,18 @@
 /*
- * MM_config.h — ALL user-tunable settings for Memory Match.
+ * MM_config.h â€” ALL user-tunable settings for Memory Match.
  *  LOCATION: APP/ (flat).
  *
  *  Three zones, same order as every game's config:
- *    1. GAMEPLAY  — reveal pacing, flip-back hold
- *    2. VISUAL    — palette (card states, cursor, messages)
- *    3. FEATURES  — demo memory skill, restart delay
+ *    1. GAMEPLAY  â€” reveal pacing, flip-back hold
+ *    2. VISUAL    â€” palette (card states, cursor, messages)
+ *    3. FEATURES  â€” demo memory skill, restart delay
  *
- *  Geometry (card size, grid origin) lives in MM_renderer.h —
+ *  Geometry (card size, grid origin) lives in MM_renderer.h â€”
  *  contract facts, not tunables.
  *
- *  PEDAGOGY NOTE (the Math Quiz §7 lesson applied from day one):
+ *  PEDAGOGY NOTE (the Math Quiz Â§7 lesson applied from day one):
  *  the REVEAL delay is a memorization beat, and the FLIP-BACK HOLD
- *  is a distinct "cards closed again" beat — pacing is config, so
+ *  is a distinct "cards closed again" beat â€” pacing is config, so
  *  both can be tuned by watching children play, without code edits.
  */
 
@@ -31,7 +31,7 @@
 #define MM_CFG_REVEAL_MS             800u
 
 /* Flip-back hold: brief pause AFTER the cards return face-down before
- * input resumes — the "closed again" beat.                              */
+ * input resumes â€” the "closed again" beat.                              */
 #define MM_CFG_FLIPBACK_HOLD_MS      300u
 
 /* Tries count every SECOND flip (standard). 8 pairs per game.        */
@@ -59,7 +59,7 @@
  * ===================================================================== */
 
 /* Autopilot memory: percent chance of matching a KNOWN pair when one
- * exists. Below that, random pick — so the demo wins visibly (~12-18
+ * exists. Below that, random pick â€” so the demo wins visibly (~12-18
  * tries) but still exercises the mismatch/flip-back path.            */
 #define MM_CFG_DEMO_MEMORY_PCT       60u
 
@@ -68,7 +68,7 @@
 
 
 /* Match celebration beat: the pair turns green + "MATCH!" and holds
- * before play resumes — the success twin of the REVEAL beat.       */
+ * before play resumes â€” the success twin of the REVEAL beat.       */
 #define MM_CFG_MATCH_MS              600u
 
 /* Terminal win-screen hold before returning to the hub.            */

@@ -202,21 +202,21 @@
 
 /* ---- PLL operating windows (datasheet) ---- */
 #if (PLL_VCO_IN_KHZ < 1000) || (PLL_VCO_IN_KHZ > 2000)
-#error "MRCC: PLL VCO input outside the recommended 1-2 MHz window — resize PLL_M for the selected PLL input (HSI-PLL: M <= 8)"
+#error "MRCC: PLL VCO input outside the recommended 1-2 MHz window - resize PLL_M for the selected PLL input (HSI-PLL: M <= 8)"
 #endif
 
 #if (PLL_VCO_OUT_KHZ < 100000) || (PLL_VCO_OUT_KHZ > 432000)
-#error "MRCC: PLL VCO output must be 100-432 MHz — fix PLL_N"
+#error "MRCC: PLL VCO output must be 100-432 MHz - fix PLL_N"
 #endif
 
 /* ---- 48 MHz clock for USB OTG FS / SDIO ---- */
 #if PLL_48MHZ_REQUIRED && (PLL_48CLK_KHZ != 48000)
-#error "MRCC: PLL48CLK is not 48 MHz — USB OTG FS / SDIO will not work. Fix PLL_Q, or set PLL_48MHZ_REQUIRED to 0 if unused (HSI-PLL cannot reach 48 MHz)"
+#error "MRCC: PLL48CLK is not 48 MHz - USB OTG FS / SDIO will not work. Fix PLL_Q, or set PLL_48MHZ_REQUIRED to 0 if unused (HSI-PLL cannot reach 48 MHz)"
 #endif
 
 /* ---- SYSCLK device limit ---- */
 #if (MRCC_SYSCLK_KHZ > 84000)
-#error "MRCC: SYSCLK exceeds the 84 MHz device maximum — fix PLL_N / PLL_P"
+#error "MRCC: SYSCLK exceeds the 84 MHz device maximum - fix PLL_N / PLL_P"
 #endif
 
 /* ---- Prescaler divider values ---- */
@@ -243,11 +243,11 @@
 /* ---- Bus frequency limits vs. COMPUTED clocks (the reviewer's
         scenario: flip to PLL_HSE and forget APB1 -> stopped HERE) ---- */
 #if (MRCC_PCLK1_KHZ > 42000)
-#error "MRCC: APB1 exceeds its 42 MHz maximum — increase RCC_APB1_PRESCALER_DIV (2 is correct for 84 MHz SYSCLK)"
+#error "MRCC: APB1 exceeds its 42 MHz maximum - increase RCC_APB1_PRESCALER_DIV (2 is correct for 84 MHz SYSCLK)"
 #endif
 
 #if (MRCC_PCLK2_KHZ > 84000)
-#error "MRCC: APB2 exceeds its 84 MHz maximum — increase RCC_APB2_PRESCALER_DIV"
+#error "MRCC: APB2 exceeds its 84 MHz maximum - increase RCC_APB2_PRESCALER_DIV"
 #endif
 
 #endif /* MRCC_CONFIG_H_ */

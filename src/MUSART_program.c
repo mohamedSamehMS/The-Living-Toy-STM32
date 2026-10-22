@@ -10,7 +10,7 @@
  *  1. STORM-SAFE BY CONSTRUCTION. Every interrupt this driver can arm
  *     (TXE/RXNE/TC/IDLE) has a guaranteed clear path inside its ISR;
  *     everything else is rejected at enable (MUSART_NOT_SUPPORTED).
- *     The Rev 1 API could arm 7 unserviced sources — each one an
+ *     The Rev 1 API could arm 7 unserviced sources â€” each one an
  *     immediate IRQ storm at priority 0, freezing the whole system.
  *     IDLE was the worst: it fires on a QUIET line, and nothing in
  *     the Rev 1 ISR ever executed the SR-read/DR-read sequence that
@@ -19,13 +19,13 @@
  *  2. ONE SHARED ISR BODY. USART1/2/6 handlers are three one-line
  *     wrappers around one table-indexed function. The Rev 1
  *     USART2/USART6 RX handlers had silently diverged from USART1
- *     (missing the RXNEIE disable) — copy-paste divergence between
+ *     (missing the RXNEIE disable) â€” copy-paste divergence between
  *     instance blocks is now structurally impossible.
  *
  *  3. CLOCKS FROM THE PUBLISHED MODEL. BRR math consumes
- *     MUSART_PCLK1/2_HZ derived from MRCC — no hand-copied 16 MHz.
+ *     MUSART_PCLK1/2_HZ derived from MRCC â€” no hand-copied 16 MHz.
  *
- *  4. INTEGER BRR MATH. mantissa/fraction from shifts and masks —
+ *  4. INTEGER BRR MATH. mantissa/fraction from shifts and masks â€”
  *     bit-exact with the Rev 1 float version (truncation behavior
  *     provably identical), deterministic, no FPU/soft-float pulled
  *     into a project whose roadmap declared the FPU low-relevance.
@@ -34,20 +34,20 @@
  *     programming a wrong baud.
  *
  *  5. TABLE-DRIVEN. Registers, NVIC id, config, and callbacks for all
- *     three instances live in ONE static table — the pattern that
+ *     three instances live in ONE static table â€” the pattern that
  *     killed MGPIO's per-function port switches.
  *
  *  Revision history:
- *    Rev 1 — original
- *    Rev 2 — rewrite (see principles above; also: typed MNVIC,
+ *    Rev 1 â€” original
+ *    Rev 2 â€” rewrite (see principles above; also: typed MNVIC,
  *            MSYSTICK_GetElapsed_ms rename, UE checks on blocking ops,
  *            NVIC-enable-after-validation, NULL-means-unregister)
- *    Rev 3 — SR snapshot at handler entry: RXNE/IDLE detection made
- *            atomic against the IDLE clear-sequence — the combined
+ *    Rev 3 â€” SR snapshot at handler entry: RXNE/IDLE detection made
+ *            atomic against the IDLE clear-sequence â€” the combined
  *            byte+idle case no longer loses the frame-complete event;
  *            TXE/TC keep live reads (post-callback state is the true
  *            state)
- *    Rev 4 — UE checks extended to the arming functions
+ *    Rev 4 â€” UE checks extended to the arming functions
  *            (SendByteNonBlocking / ReceiveEnable / InterruptEnable);
  *            InterruptDisable stays ungated by design. IDLE-alone
  *            data-loss footgun documented at MUSART_INT_IDLE and in
@@ -101,7 +101,7 @@ typedef struct
     volatile u32                         FeDroppedCount;    /* Rev 5: FE/NF bytes dropped by the ISR */
 } MUSART_Instance_t;
 
-/* Instance count — indexes into the table (see MUSART_USART_t) */
+/* Instance count â€” indexes into the table (see MUSART_USART_t) */
 #define MUSART_INSTANCE_COUNT   3u
 
 /* ---- the three per-instance configs (from MUSART_config.h) ---- */
@@ -151,7 +151,7 @@ MUSART_ReturnType_t MUSART_Init(MUSART_USART_t Copy_USART)
 {
     volatile MUSART_Registers_t   *Local_Reg;
     const MUSART_InstanceConfig_t *Local_Cfg;
-    u32  Local_u32X;         /* 16*USARTDIV (or 8* in OVER8) — integer */
+    u32  Local_u32X;         /* 16*USARTDIV (or 8* in OVER8) â€” integer */
     u16  Local_u16Mantissa;
     u8   Local_u8Fraction;
     u8   Local_u8Over8;
@@ -163,7 +163,7 @@ MUSART_ReturnType_t MUSART_Init(MUSART_USART_t Copy_USART)
     Local_Reg = MUSART_Instances[Copy_USART].Reg;
     Local_Cfg = MUSART_Instances[Copy_USART].Cfg;
 
-    /* 1. Disable before configuring — RM0368: CR1/CR2/CR3/BRR writes
+    /* 1. Disable before configuring â€” RM0368: CR1/CR2/CR3/BRR writes
           are only guaranteed with UE=0. (Rev 1 did this; kept.) */
     CLR_BIT(Local_Reg->CR1, MUSART_CR1_UE);
 
@@ -187,10 +187,10 @@ MUSART_ReturnType_t MUSART_Init(MUSART_USART_t Copy_USART)
     if (Local_Cfg->DmaRx) { SET_BIT(Local_Reg->CR3, MUSART_CR3_DMAR); }
     if (Local_Cfg->Smartcard)
     {
-        SET_BIT(Local_Reg->CR3, MUSART_CR3_SCEN);   /* STUB — see config guide */
+        SET_BIT(Local_Reg->CR3, MUSART_CR3_SCEN);   /* STUB â€” see config guide */
     }
 
-    /* 4. CR1: oversampling (smartcard forces 16 — hardware would
+    /* 4. CR1: oversampling (smartcard forces 16 â€” hardware would
           anyway, made explicit), word length, parity, direction */
     Local_u8Over8 = (Local_Cfg->Oversampling == MUSART_OVERSAMPLING_8) ? 1u : 0u;
     if (Local_Cfg->Smartcard) { Local_u8Over8 = 0u; }
@@ -221,16 +221,16 @@ MUSART_ReturnType_t MUSART_Init(MUSART_USART_t Copy_USART)
         SET_BIT(Local_Reg->CR1, MUSART_CR1_RE);
     }
 
-    /* 5. BRR — INTEGER math (design principle 4).
+    /* 5. BRR â€” INTEGER math (design principle 4).
           USARTDIV = fCK / ((8 or 16) * baud);  X = fCK / baud gives
           16*USARTDIV (or 8* in OVER8) directly:
             OVER8=0: mantissa = X >> 4, fraction = X & 0xF  (4 bits)
-            OVER8=1: mantissa = X >> 3, fraction = X & 0x7  (3 bits —
+            OVER8=1: mantissa = X >> 3, fraction = X & 0x7  (3 bits â€”
                      BRR[3] stays 0, the detail everyone misses)
           Truncation is bit-exact with the old float version. */
     if (Local_Cfg->BaudRate == 0u)
     {
-        return MUSART_INVALID_CONFIG;   /* guarded at compile time too — defense in depth */
+        return MUSART_INVALID_CONFIG;   /* guarded at compile time too â€” defense in depth */
     }
     Local_u32X = Local_Cfg->ClockHz / Local_Cfg->BaudRate;
 
@@ -254,7 +254,7 @@ MUSART_ReturnType_t MUSART_Init(MUSART_USART_t Copy_USART)
 
     Local_Reg->BRR = (((u32)Local_u16Mantissa & 0x0FFFu) << 4) | Local_u8Fraction;
 
-    /* 6. Enable if configured (all functions gate on UE — see Rev 4) */
+    /* 6. Enable if configured (all functions gate on UE â€” see Rev 4) */
     if (Local_Cfg->Enabled) { SET_BIT(Local_Reg->CR1, MUSART_CR1_UE); }
     else                    { CLR_BIT(Local_Reg->CR1, MUSART_CR1_UE); }
 
@@ -304,7 +304,7 @@ MUSART_ReturnType_t MUSART_InterruptEnable(MUSART_USART_t Copy_USART, MUSART_Int
 
     /* UE check (Rev 4): arming sources on a disabled USART is a
        configuration-order error (worst corner: TXE on a never-written
-       DR fires the callback immediately — true but meaningless).
+       DR fires the callback immediately â€” true but meaningless).
        InterruptDisable deliberately stays UNGATED: disarming must
        always succeed, like MNVIC_ClearPending. */
     if (GET_BIT(Local_Reg->CR1, MUSART_CR1_UE) == 0)
@@ -313,7 +313,7 @@ MUSART_ReturnType_t MUSART_InterruptEnable(MUSART_USART_t Copy_USART, MUSART_Int
     }
 
     /* ---- Validate AND set the peripheral bit FIRST; the NVIC line is
-            enabled only afterwards (Rev 1 order was reversed — a bad
+            enabled only afterwards (Rev 1 order was reversed â€” a bad
             argument still armed the IRQ line). ---- */
     switch (Copy_Interrupt)
     {
@@ -337,13 +337,13 @@ MUSART_ReturnType_t MUSART_InterruptEnable(MUSART_USART_t Copy_USART, MUSART_Int
     /* ---- NVIC enable (typed enum; status propagated) ----
             Re-enabling an enabled line is harmless: ISER is
             write-1-to-set. Priority: the APPLICATION sets it via
-            MNVIC_SetPriority before first use — the driver never
+            MNVIC_SetPriority before first use â€” the driver never
             touches priorities (one owner per concern). */
     {
         MNVIC_ReturnType_t Local_EnumStatus = MNVIC_EnableInterrupt(MUSART_Instances[Copy_USART].Irq);
         if (Local_EnumStatus != MNVIC_OK)
         {
-            return Local_EnumStatus;   /* impossible with our enum values — belt and braces */
+            return Local_EnumStatus;   /* impossible with our enum values â€” belt and braces */
         }
     }
 
@@ -399,7 +399,7 @@ MUSART_ReturnType_t MUSART_SendByteBlocking(MUSART_USART_t Copy_USART, u8 Copy_u
     }
     Local_Reg = MUSART_Instances[Copy_USART].Reg;
 
-    /* UE check — the MSPI SPE lesson: a disabled peripheral's flags
+    /* UE check â€” the MSPI SPE lesson: a disabled peripheral's flags
        never assert, so the timeout would burn a full second per call.
        Refuse immediately and loudly instead. */
     if (GET_BIT(Local_Reg->CR1, MUSART_CR1_UE) == 0)
@@ -441,7 +441,7 @@ MUSART_ReturnType_t MUSART_ReceiveByteBlocking(MUSART_USART_t Copy_USART, u8 *Co
         return MUSART_TIMEOUT;
     }
 
-    /* DR read clears RXNE — and (with the SR reads above) any latched
+    /* DR read clears RXNE â€” and (with the SR reads above) any latched
        ORE, recovering the link after an overrun without hanging. The
        byte delivered is the OLDER one; the overrun byte was lost by
        hardware before software ever saw it. */
@@ -463,7 +463,7 @@ MUSART_ReturnType_t MUSART_SendByteNonBlocking(MUSART_USART_t Copy_USART, u8 Cop
     }
     Local_Reg = MUSART_Instances[Copy_USART].Reg;
 
-    /* UE check (Rev 4): on a disabled USART this used to return OK —
+    /* UE check (Rev 4): on a disabled USART this used to return OK â€”
        but the DR write clears TXE and only the TDR->shift-register
        transfer (which needs UE) can set it again. The byte sits in TDR
        as a DEFERRED action: if the app enables the USART later, the
@@ -477,7 +477,7 @@ MUSART_ReturnType_t MUSART_SendByteNonBlocking(MUSART_USART_t Copy_USART, u8 Cop
         return MUSART_NOT_ENABLED;
     }
 
-    /* DR must be empty RIGHT NOW — a non-blocking API must not wait.
+    /* DR must be empty RIGHT NOW â€” a non-blocking API must not wait.
        BUSY tells the caller to retry or use the callback chain. */
     if (GET_BIT(Local_Reg->SR, MUSART_SR_TXE) == 0)
     {
@@ -486,7 +486,7 @@ MUSART_ReturnType_t MUSART_SendByteNonBlocking(MUSART_USART_t Copy_USART, u8 Cop
 
     Local_Reg->DR = Copy_u8Data;
 
-    /* Arm TXE (peripheral bit first, then NVIC — same order contract
+    /* Arm TXE (peripheral bit first, then NVIC â€” same order contract
        as InterruptEnable). The ISR disables TXEIE BEFORE the callback:
        one-shot per byte, storm-proof even if the callback writes
        nothing. Stream pattern: the TxCallback writes the next byte
@@ -513,7 +513,7 @@ MUSART_ReturnType_t MUSART_ReceiveEnable(MUSART_USART_t Copy_USART)
     Local_Reg = MUSART_Instances[Copy_USART].Reg;
 
     /* UE check (Rev 4): the receiver can never set RXNE/IDLE while
-       UE=0 — armed-but-inert is exactly the silent "nothing works, no
+       UE=0 â€” armed-but-inert is exactly the silent "nothing works, no
        error anywhere" trap. Refuse loudly. */
     if (GET_BIT(Local_Reg->CR1, MUSART_CR1_UE) == 0)
     {
@@ -522,7 +522,7 @@ MUSART_ReturnType_t MUSART_ReceiveEnable(MUSART_USART_t Copy_USART)
 
     /* Arm the framing pair: RXNE (every byte) + IDLE (frame end).
        If a byte is already sitting in DR, the IRQ fires immediately
-       with it — arming never discards buffered data. */
+       with it â€” arming never discards buffered data. */
     SET_BIT(Local_Reg->CR1, MUSART_CR1_RXNEIE);
     SET_BIT(Local_Reg->CR1, MUSART_CR1_IDLEIE);
 
@@ -550,7 +550,7 @@ MUSART_ReturnType_t MUSART_ReceiveDisable(MUSART_USART_t Copy_USART)
        ReceiveEnable): disarming must always succeed. */
     CLR_BIT(Local_Reg->CR1, MUSART_CR1_RXNEIE);
     CLR_BIT(Local_Reg->CR1, MUSART_CR1_IDLEIE);
-    /* NVIC line intentionally left enabled — harmless, and ReceiveEnable
+    /* NVIC line intentionally left enabled â€” harmless, and ReceiveEnable
        is then a two-CR1-bit operation away. */
     return MUSART_OK;
 }
@@ -559,7 +559,7 @@ MUSART_ReturnType_t MUSART_ReceiveDisable(MUSART_USART_t Copy_USART)
  *                        CALLBACK SETTERS                                    *
  * ========================================================================= */
 
-/* NULL is a valid "unregister" value for every setter — one table row
+/* NULL is a valid "unregister" value for every setter â€” one table row
    per instance means every instance gets identical semantics (the
    Rev 1 divergence class cannot recur). Aligned pointer stores are
    atomic; ISRs re-read them every event. */
@@ -607,30 +607,30 @@ MUSART_ReturnType_t MUSART_SetIdleCallback(MUSART_USART_t Copy_USART, MUSART_Idl
 /* ========================================================================= *
  *                        INTERRUPT SERVICE ROUTINES                         *
  * ========================================================================= *
- * One shared body (design principle 2) — the three public handlers are
+ * One shared body (design principle 2) â€” the three public handlers are
  * one-line wrappers. Everything below is the storm-safety map made
  * executable; read it together with the map comment in private.h.
  * ========================================================================= */
 
 /* ---- The shared handler --------------------------------------------------
- * REV 3 HARDENING — the SR SNAPSHOT. SR is read exactly ONCE, at entry,
+ * REV 3 HARDENING â€” the SR SNAPSHOT. SR is read exactly ONCE, at entry,
  * into Local_u32Sr; branches 1 and 2 detect their flags from that copy.
  *
  * WHY: IDLE is cleared by the read-SR + read-DR sequence. In the
  * combined case (a byte AND its follow-up idle both pending when the
- * handler runs — ISR latency beyond ~one character time), branch 1's
+ * handler runs â€” ISR latency beyond ~one character time), branch 1's
  * own SR read + DR read completes that sequence, and hardware silently
- * drops IDLE before branch 2's live check could see it — the
+ * drops IDLE before branch 2's live check could see it â€” the
  * frame-complete event is lost. The snapshot captures IDLE=1 before any
  * branch can consume it: DETECTION becomes atomic, while the hardware
  * clear still happens through the normal sequences.
  *
  * Properties of the snapshot:
  *   - flags that set AFTER the snapshot are handled on the NEXT IRQ
- *     invocation (flag stays set, IRQ re-pends) — conservative, never
+ *     invocation (flag stays set, IRQ re-pends) â€” conservative, never
  *     lossy. RXNE=1 in the snapshot implies live RXNE=1 at branch 1:
  *     only a DR read clears RXNE, and none has happened yet.
- *   - TXE / TC (branches 3/4) deliberately keep LIVE reads — see the
+ *   - TXE / TC (branches 3/4) deliberately keep LIVE reads â€” see the
  *     notes at those branches; do not "harmonize" them to the snapshot.
  * -------------------------------------------------------------------------- */
 static void MUSART_privateHandler(u8 Copy_u8Index)
@@ -640,13 +640,13 @@ static void MUSART_privateHandler(u8 Copy_u8Index)
 
     /* ONE SR read at entry. This read is itself the "read SR" half of
        the IDLE/ORE clear sequences: if IDLE is set now, branch 1's DR
-       read will complete its clear in hardware — and branch 2 still
+       read will complete its clear in hardware â€” and branch 2 still
        detects the event from this saved copy. That is the whole fix. */
     u32 Local_u32Sr = Local_Reg->SR;
 
-    /* ============ 1. RXNE — continuous byte reception ============
-     * Snapshot-detected (equivalent to live here — see header note).
-     * The DR read delivers the byte, clears RXNE — and, in the
+    /* ============ 1. RXNE â€” continuous byte reception ============
+     * Snapshot-detected (equivalent to live here â€” see header note).
+     * The DR read delivers the byte, clears RXNE â€” and, in the
      * combined case, completes the IDLE clear whose detection branch 2
      * already banked in the snapshot. RXNE sets only on hardware byte
      * arrival, so leaving RXNEIE armed cannot storm.
@@ -657,12 +657,12 @@ static void MUSART_privateHandler(u8 Copy_u8Index)
     {
         u8 Local_u8Data = (u8)Local_Reg->DR;   /* clears RXNE (and ORE) */
 
-        /* REV 5b — ERROR-FLAG INSTRUMENTATION, POLICY-SEPARATED.
-           FE/NF events are COUNTED always — the counter is the link-
+        /* REV 5b â€” ERROR-FLAG INSTRUMENTATION, POLICY-SEPARATED.
+           FE/NF events are COUNTED always â€” the counter is the link-
            health instrument. DELIVERY follows two config knobs, both
            defaulting to DELIVER: bench runs 5-7 show this link sets FE
            on a substantial fraction of REAL bytes (leading theory: a
-           few-percent baud mismatch on the adapter's TX — the stop bit
+           few-percent baud mismatch on the adapter's TX â€” the stop bit
            is single-sampled and takes the worst drift, while the
            majority-voted data bits stay correct; that is why headers
            parsed and transfers completed pre-patch). Dropping FE bytes
@@ -697,8 +697,8 @@ static void MUSART_privateHandler(u8 Copy_u8Index)
         }
     }
 
-    /* ============ 2. IDLE — frame complete ============
-     * SNAPSHOT-detected — THE FIX. In the combined case the hardware
+    /* ============ 2. IDLE â€” frame complete ============
+     * SNAPSHOT-detected â€” THE FIX. In the combined case the hardware
      * flag was already cleared by branch 1's DR read; this snapshot is
      * the only place it still exists.
      * Hardware clear: the snapshot read primed the sequence; this DR
@@ -707,7 +707,7 @@ static void MUSART_privateHandler(u8 Copy_u8Index)
      * completed it and this extra read is a harmless no-op (RXNE=0,
      * stale value, discarded via (void)).
      * IDLE-ALONE FOOTGUN (Rev 4, documented at MUSART_INT_IDLE): with
-     * RXNEIE=0 this DR read discards the pending byte unread —
+     * RXNEIE=0 this DR read discards the pending byte unread â€”
      * unavoidable while clearing IDLE, and over a multi-byte frame it
      * is the FIRST byte (the only one that reached RDR; later bytes
      * were dropped by hardware overrun). IDLE must be armed with RXNE;
@@ -729,13 +729,13 @@ static void MUSART_privateHandler(u8 Copy_u8Index)
         }
     }
 
-    /* ============ 3. TXE — one-shot transmit-ready ============
+    /* ============ 3. TXE â€” one-shot transmit-ready ============
      * LIVE read, deliberately NOT the snapshot: a DR write clears TXE,
      * and user callbacks in branches 1-2 may have transmitted a byte
      * before this branch runs. The live read then correctly reports
      * "DR full"; a snapshot TXE=1 would fire the callback for a DR
      * that is no longer empty (SendByteNonBlocking's TXE guard would
-     * catch it with BUSY — safe, but pointlessly noisy). */
+     * catch it with BUSY â€” safe, but pointlessly noisy). */
     if ((GET_BIT(Local_Reg->SR, MUSART_SR_TXE) == 1) &&
         (GET_BIT(Local_Reg->CR1, MUSART_CR1_TXEIE) == 1))
     {
@@ -747,11 +747,11 @@ static void MUSART_privateHandler(u8 Copy_u8Index)
         }
     }
 
-    /* ============ 4. TC — transmission truly complete ============
+    /* ============ 4. TC â€” transmission truly complete ============
      * LIVE read, deliberately NOT the snapshot: a DR write also clears
      * TC. If the TXE callback (branch 3) chained the next byte, a
      * snapshot TC=1 would report "transmission complete" for a
-     * transmission just superseded — a lie for direction-switching
+     * transmission just superseded â€” a lie for direction-switching
      * callers. The live read drops the superseded event: exactly the
      * right semantics. */
     if ((GET_BIT(Local_Reg->SR, MUSART_SR_TC) == 1) &&
@@ -768,12 +768,12 @@ static void MUSART_privateHandler(u8 Copy_u8Index)
     /* ORE final note: with RXNEIE armed, ORE implies RXNE=1 (so the
        snapshot saw it too) and was cleared by branch 1's DR read. With
        RXNEIE off, ORE cannot pend the IRQ at all (its interrupt gate
-       is RXNEIE or EIE — and EIE is rejected at enable). No ORE storm
+       is RXNEIE or EIE â€” and EIE is rejected at enable). No ORE storm
        is reachable in any state this driver can create. */
 }
 
 /* ---- Public vector-table entries (strong symbols override the weak
-        Default_Handler aliases in startup_stm32f401xc.s — same linkage
+        Default_Handler aliases in startup_stm32f401xc.s â€” same linkage
         pattern as MSPI's handlers; NOT part of the API contract) ---- */
 
 void USART1_IRQHandler(void) { MUSART_privateHandler(MUSART_USART1); }
@@ -784,7 +784,7 @@ void USART6_IRQHandler(void) { MUSART_privateHandler(MUSART_USART6); }
  *                        PRIVATE HELPERS                                     *
  * ========================================================================= */
 
-/* ---- Instance validation (u32 cast BEFORE compare — the enum-garbage
+/* ---- Instance validation (u32 cast BEFORE compare â€” the enum-garbage
         rule from MGPIO/MNVIC: a negative value passes a signed "> MAX"
         test but becomes huge as u32 and fails here) ---------------------- */
 static MUSART_ReturnType_t MUSART_privateValidateInstance(MUSART_USART_t Copy_USART)
@@ -797,7 +797,7 @@ static MUSART_ReturnType_t MUSART_privateValidateInstance(MUSART_USART_t Copy_US
 }
 
 /* ---- Bounded flag poll, timed against the SysTick timebase.
-        CONTRACT: MSYSTICK_Init must have run — GetElapsed_ms returns
+        CONTRACT: MSYSTICK_Init must have run â€” GetElapsed_ms returns
         0 forever before init, and this loop would never exit. Same
         dependency note MSPI carries. ------------------------------------ */
 static u8 MUSART_privateWaitForFlagTimeout(volatile MUSART_Registers_t *Copy_USART, u8 Copy_u8Flag)

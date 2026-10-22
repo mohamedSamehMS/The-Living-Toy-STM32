@@ -1,12 +1,12 @@
 /*
- * SNAKE_config.h � ALL user-tunable settings for the Snake game.
+ * SNAKE_config.h - ALL user-tunable settings for the Snake game.
  *
  *  LOCATION: APP/ (flat).
  *
  *  THREE ZONES (same order in every game's config, for grep-ability):
- *    1. GAMEPLAY  � rules, difficulty, pacing
- *    2. VISUAL    � palette + visual timing
- *    3. FEATURES  � demo mode / difficulty flags
+ *    1. GAMEPLAY  - rules, difficulty, pacing
+ *    2. VISUAL    - palette + visual timing
+ *    3. FEATURES  - demo mode / difficulty flags
  *
  *  NOT here: field geometry (renderer contract facts), any code.
  *  Every value below is safe to change without code edits; anything
@@ -25,22 +25,22 @@
 
 /* Difficulty model: the ramp's two ends. Difficulty presets may set
  * these; individual values remain overridable.                     */
-#define SNAKE_CFG_TICK_MS_BASE       250u   /* initial tick � slowest */
-#define SNAKE_CFG_TICK_MS_MIN        140u   /* speed floor � fastest  */
+#define SNAKE_CFG_TICK_MS_BASE       250u   /* initial tick - slowest */
+#define SNAKE_CFG_TICK_MS_MIN        140u   /* speed floor - fastest  */
 #define SNAKE_CFG_SPEEDUP_PER_FOOD   4u     /* ms faster per segment  */
 #define SNAKE_CFG_START_LEN          3u     /* initial body segments  */
 
-/* Wall behavior � selected by the hub's Snake difficulty setting:
+/* Wall behavior - selected by the hub's Snake difficulty setting:
  *   SNAKE_CFG_WALLS_HARD   0 = wrap-around edges (easy: exit right,
  *                               re-enter left; death by self only)
  *   SNAKE_CFG_WALLS_HARD   1 = solid walls (hard: edges kill)
  * Implemented in the game's tick, one modulo branch.
- * Renderer is unaffected � a cell is a cell.                        */
+ * Renderer is unaffected - a cell is a cell.                        */
 #define SNAKE_CFG_WALLS_HARD         1u     /* v1: classic solid walls */
 
 /* Difficulty preset selection is read from the hub Settings menu
  * at launch.
- * Values: 0 = EASY, 1 = NORMAL, 2 = HARD � presets below re-map the
+ * Values: 0 = EASY, 1 = NORMAL, 2 = HARD - presets below re-map the
  * gameplay zone's numbers.                                          */
 #define SNAKE_CFG_DIFFICULTY         1u     /* NORMAL                   */
 
@@ -55,7 +55,7 @@
   #define SNAKE_CFG_TICK_MS_MIN      90u
 #endif
 /* =====================================================================
- *  2. VISUAL / RENDERER � the values migrate verbatim from the top of
+ *  2. VISUAL / RENDERER - the values migrate verbatim from the top of
  *     SNAKE_renderer.c; renderer.c includes this file and deletes its
  *     local palette block.
  * ===================================================================== */

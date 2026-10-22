@@ -1,7 +1,7 @@
 /*
- * HIR_private.h � IR receiver driver (NEC link layer), PRIVATE header
+ * HIR_private.h - IR receiver driver (NEC link layer), PRIVATE header
  *
- *  THE ENGINE � LANDED: TIM5 both-edges input capture on PA0 (AF2).
+ *  THE ENGINE - LANDED: TIM5 both-edges input capture on PA0 (AF2).
  *  The stepping engine (HIR_privateMeasureLevelUs, HIR_STEP_US, the
  *  0.85x-calibrated threshold set) is RETIRED with this revision. The
  *  engine seam closed exactly as designed: HIR_enumDecodeFrame /
@@ -9,7 +9,7 @@
  *  HNEC_REMOTE + application code are untouched.
  *
  *  FRAME STRUCTURE (the structural fact this machine is built on): NEC
- *  data AND repeat frames end with a trailing ~560us LOW burst � the
+ *  data AND repeat frames end with a trailing ~560us LOW burst - the
  *  bit-31 space (and the repeat header space) is terminated by its
  *  falling edge, and its rising edge is the frame-completion event.
  *  68 edges per data frame, 4 per repeat (matches the testbench oracle).
@@ -20,9 +20,9 @@
 #include "STD_TYPES.h"
 #include "HAL/IR/HIR_interface.h"     /* HIR_FrameType_t */
 
-/* ---- Decode thresholds � TRUE MICROSECONDS (TIM5 hardware timestamps).
+/* ---- Decode thresholds - TRUE MICROSECONDS (TIM5 hardware timestamps).
  *        SHIP-FROZEN: the bench echo pass verified all 21 buttons.
- *        Never mix these with the old calibrated set � the numbers and
+ *        Never mix these with the old calibrated set - the numbers and
  *        the engine are a matched pair, and the pair has changed. ---- */
 #define HIR_FRAME_TIMEOUT_US     15000u  /* level stuck > 15 ms = dead frame */
 #define HIR_HDR_LOW_MIN_US       6000u   /* low >= this = AGC header          */
@@ -42,7 +42,7 @@ typedef enum
     HIR_SM_STOP          /* awaiting the trailing burst's rising edge        */
 } HIR_SmState_t;
 
-/* Capture callbacks � MTIM_CaptureCallback_t signature, ISR context */
+/* Capture callbacks - MTIM_CaptureCallback_t signature, ISR context */
 static void HIR_privateRisingEdgeCb (u32 Copy_u32Timestamp);
 static void HIR_privateFallingEdgeCb(u32 Copy_u32Timestamp);
 

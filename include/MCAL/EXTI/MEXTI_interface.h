@@ -4,52 +4,52 @@
  *  PUBLIC interface of the MEXTI driver. HAL and Application code
  *  must include ONLY this file.
  *
- *  NOTE — replaces MEXTI_int.h (file renamed, guard renamed; delete
+ *  NOTE â€” replaces MEXTI_int.h (file renamed, guard renamed; delete
  *  the old file from the tree).
  *
  *  Reference: RM0368 (STM32F401xB/xC), Ch. 10: EXTI / SYSCFG
  *
  *  BOOT-ORDER CONTRACT (all steps are HARD prerequisites):
  *      1. MRCC_Init()
- *      2. MRCC_EnablePeripheralClock(MRCC_GPIOx)   — the button port
+ *      2. MRCC_EnablePeripheralClock(MRCC_GPIOx)   â€” the button port
  *      3. MGPIO pin config (this driver does NOT own pins):
  *              MGPIO_SetPinMode (port, pin, MGPIO_MODE_INPUT);
  *              MGPIO_SetPinPull (port, pin, MGPIO_PULL_UP);
- *         (active-low buttons: pull-up, falling trigger — the pattern
+ *         (active-low buttons: pull-up, falling trigger â€” the pattern
  *          the config table's ENABLED rows assume)
- *      4. MRCC_EnablePeripheralClock(MRCC_SYSCFG) — CRITICAL: writes
+ *      4. MRCC_EnablePeripheralClock(MRCC_SYSCFG) â€” CRITICAL: writes
  *         to SYSCFG EXTICR are SILENTLY ignored without it (the #1
- *         "nothing works, no error anywhere" trap — lines would stay
+ *         "nothing works, no error anywhere" trap â€” lines would stay
  *         routed to their reset port-A default)
- *      5. MNVIC_Init() and PRIORITIES (before first enable — the
+ *      5. MNVIC_Init() and PRIORITIES (before first enable â€” the
  *         MNVIC boot-order contract). Per the Project 4 plan, buttons
  *         sit at priority 1. NOTE the shared vectors:
  *              lines 0..4  : one IRQ each    -> MNVIC_EXTI0..EXTI4
  *              lines 5..9  : ONE shared IRQ  -> MNVIC_EXTI9_5
  *              lines 10..15: ONE shared IRQ  -> MNVIC_EXTI15_10
  *         Setting MNVIC_EXTI15_10's priority sets it for ALL of
- *         lines 10..15 — there is no per-line NVIC priority.
- *      6. MEXTI_Init()   — applies the config table
+ *         lines 10..15 â€” there is no per-line NVIC priority.
+ *      6. MEXTI_Init()   â€” applies the config table
  *      7. MEXTI_SetCallBack() per line (any time before events)
  *
  *  SCOPE BOUNDARY: GPIO lines 0..15 only. Internal EXTI lines
  *  16 (PVD), 17 (RTC alarm), 18 (OTG FS wake), 21 (tamper),
  *  22 (RTC wakeup) belong to their owning drivers (MPWR, MRTC,
- *  OTG) — they are hardwired internally and do not route through
+ *  OTG) â€” they are hardwired internally and do not route through
  *  SYSCFG EXTICR.
  *
- *  CALLBACK CONTRACT: callbacks run in ISR context (EXTI priority —
+ *  CALLBACK CONTRACT: callbacks run in ISR context (EXTI priority â€”
  *  set high per the plan so buttons preempts SysTick and USART).
  *  ISR-minimal rule: set a flag / timestamp with
- *  MSYSTICK_GetElapsed_ms() and return — ALL processing happens in
+ *  MSYSTICK_GetElapsed_ms() and return â€” ALL processing happens in
  *  the super-loop. DEBOUNCING IS NOT THIS DRIVER'S JOB: mechanical
  *  buttons bounce, one press = several edges = several callback
  *  invocations. Debounce belongs at the HAL/app layer: ignore edges
  *  within ~20-30 ms of the last accepted one.
  *
  *  Revision history:
- *    Rev 1 — original API (MEXTI_int.h; no handlers, no NVIC wiring)
- *    Rev 2 — this rewrite: handlers + NVIC mapping live in the
+ *    Rev 1 â€” original API (MEXTI_int.h; no handlers, no NVIC wiring)
+ *    Rev 2 â€” this rewrite: handlers + NVIC mapping live in the
  *            driver; MGPIO_Port_t reuse; NULL-means-unregister;
  *            MEXTI_TriggerLine (SWIER) added; naming sweep
  *
@@ -63,12 +63,12 @@
 #include "STD_TYPES.h"
 
 /* =====================================================================
- *  Driver status codes — the library convention
+ *  Driver status codes â€” the library convention
  * ===================================================================== */
 typedef enum
 {
     MEXTI_OK = 0,            /* Operation completed                       */
-    MEXTI_NOT_INITIALIZED,   /* Enable called before MEXTI_Init — the
+    MEXTI_NOT_INITIALIZED,   /* Enable called before MEXTI_Init â€” the
                                 config table (routing/trigger) has not
                                 been applied, so the line would fire on
                                 whatever the reset defaults are. Nothing
@@ -86,7 +86,7 @@ typedef enum
  *  EXTI line identifiers
  *
  *  Values equal the line number and are used directly as bit
- *  positions / loop indices — keep 0..15 in order.
+ *  positions / loop indices â€” keep 0..15 in order.
  * ===================================================================== */
 typedef enum
 {
@@ -96,14 +96,14 @@ typedef enum
     MEXTI_LINE12,    MEXTI_LINE13, MEXTI_LINE14, MEXTI_LINE15
 } MEXTI_LineNumber_t;
 
-/* NOTE: no MEXTI_Port_t — the port type is MGPIO_Port_t, reused
+/* NOTE: no MEXTI_Port_t â€” the port type is MGPIO_Port_t, reused
  * (values 0/1/2 = A/B/C are also the EXTICR encodings). The config
  * table's PortSource field uses it; one port type across the library. */
 
 /* =====================================================================
  *  Trigger edge selection
  *
- *  Selector values only — the driver maps them to RTSR/FTSR bits
+ *  Selector values only â€” the driver maps them to RTSR/FTSR bits
  *  (ON_CHANGE = both bits set, which is legal hardware usage).
  * ===================================================================== */
 typedef enum
@@ -119,21 +119,21 @@ typedef enum
 
 /**
  * @brief  Applies the static config table: validates every row (line,
- *         port, trigger, state, NO duplicate lines — validation runs
+ *         port, trigger, state, NO duplicate lines â€” validation runs
  *         for the WHOLE table before any register is touched: either
  *         the entire table lands or nothing is written), then per row
  *         sets SYSCFG routing, the trigger edges, clears any stale
  *         pending bit, and enables/disables the line.
  * @note   Re-Init is legal and idempotent (const table -> identical
  *         register writes). Registered callbacks are PRESERVED across
- *         re-Init — they are runtime state, not configuration.
+ *         re-Init â€” they are runtime state, not configuration.
  *         Prerequisites: steps 1-4 of the boot-order contract.
  */
 MEXTI_ReturnType_t MEXTI_Init(void);
 
 /**
  * @brief  Arm one line: clear any stale pending, unmask IMR, and
- *         enable the line's NVIC IRQ. THE ARMING FUNCTION — the only
+ *         enable the line's NVIC IRQ. THE ARMING FUNCTION â€” the only
  *         one gated on MEXTI_Init (enabling a line whose routing and
  *         trigger have not been configured is a config-order error).
  *
@@ -143,17 +143,17 @@ MEXTI_ReturnType_t MEXTI_Init(void);
  *              10..15-> MNVIC_EXTI15_10              (shared)
  * @note   Priority is the APPLICATION's job, BEFORE first enable
  *         (MNVIC boot-order contract; see the shared-vector note in
- *         the file header — one priority per IRQ, not per line).
+ *         the file header â€” one priority per IRQ, not per line).
  *         Re-enabling an already-active line is legal (IMR is plain
  *         RW; NVIC re-enable is W1S) but the stale-pending clear can
- *         consume one not-yet-serviced event — Enable is a
+ *         consume one not-yet-serviced event â€” Enable is a
  *         boot/config-time function, not a per-event one.
  */
 MEXTI_ReturnType_t MEXTI_EnableInterrupt (MEXTI_LineNumber_t Copy_Line);
 
 /**
  * @brief  Disarm one line: mask IMR. DELIBERATELY does NOT disable the
- *         NVIC IRQ — for lines 5..15 the vector is SHARED: disabling
+ *         NVIC IRQ â€” for lines 5..15 the vector is SHARED: disabling
  *         it would silently kill other live lines on the same IRQ.
  *         NVIC-line shutdown is a shared-resource decision the
  *         application can make via MNVIC_DisableInterrupt itself.
@@ -164,7 +164,7 @@ MEXTI_ReturnType_t MEXTI_DisableInterrupt(MEXTI_LineNumber_t Copy_Line);
 /**
  * @brief  Set the trigger edge(s) of one line (RTSR/FTSR). Not
  *         init-gated (pure configuration write), fully validated.
- *         A line enabled with BOTH trigger bits clear never pends —
+ *         A line enabled with BOTH trigger bits clear never pends â€”
  *         garbage trigger values are rejected instead of silently
  *         producing that state.
  */
@@ -174,7 +174,7 @@ MEXTI_ReturnType_t MEXTI_SetTrigger(MEXTI_LineNumber_t Copy_Line,
 /**
  * @brief  Register the callback for one line. Called from the line's
  *         ISR after its pending bit is cleared. NULL is a VALID value:
- *         it UNREGISTERS the callback (library-wide convention —
+ *         it UNREGISTERS the callback (library-wide convention â€”
  *         events with no callback are simply ignored, never a crash).
  *         Not init-gated: register any time before events.
  */
@@ -182,7 +182,7 @@ MEXTI_ReturnType_t MEXTI_SetCallBack(MEXTI_LineNumber_t Copy_Line,
                                      void (*Copy_CallBack)(void));
 
 /**
- * @brief  Clear the pending flag of one line — direct W1C store (the
+ * @brief  Clear the pending flag of one line â€” direct W1C store (the
  *         ONLY correct PR idiom; see private.h). Ungated: clearing is
  *         always safe, like MNVIC_ClearPending. Use before manual
  *         re-enables to discard latched spurious events.
@@ -194,16 +194,16 @@ MEXTI_ReturnType_t MEXTI_ClearFlag(MEXTI_LineNumber_t Copy_Line);
  *         line's PR pending bit. If the line is ENABLED (IMR + NVIC),
  *         the FULL dispatch path runs: IRQ fires -> handler -> pending
  *         cleared -> callback executed. THE zero-hardware button test.
- *         If the line is not enabled, only PR sets (no exception) —
+ *         If the line is not enabled, only PR sets (no exception) â€”
  *         visible via a later ClearFlag/consumer.
  * @note   Distinct from MNVIC_TriggerIRQ(MNVIC_EXTI0): that pends
- *         ONLY the NVIC side (PR stays 0 — the handler runs, finds
+ *         ONLY the NVIC side (PR stays 0 â€” the handler runs, finds
  *         nothing, returns). It proves VECTOR LINKAGE; SWIER proves
  *         the whole path INCLUDING your callback.
  */
 MEXTI_ReturnType_t MEXTI_TriggerLine(MEXTI_LineNumber_t Copy_Line);
 
-/* IRQ handlers are NOT part of the public contract — the startup
+/* IRQ handlers are NOT part of the public contract â€” the startup
  * file's weak Default_Handler aliases link to this driver's strong
  * EXTI0..4/EXTI9_5/EXTI15_10 definitions directly. */
 

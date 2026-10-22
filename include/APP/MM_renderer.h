@@ -1,10 +1,10 @@
 /*
- * MM_renderer.h — the TFT-side contract for Memory Match.
+ * MM_renderer.h â€” the TFT-side contract for Memory Match.
  *  LOCATION: APP/ (flat).
  *
  *  The renderer paints the card grid, the four card states, the
  *  cursor ring, HUD cells, and the message line. It knows nothing
- *  about pairs, turns, or memory — the game logic drives this
+ *  about pairs, turns, or memory â€” the game logic drives this
  *  interface. Pixels exist only inside MM_renderer.c.
  *
  *  Card index: 0..15, row-major:
@@ -44,17 +44,17 @@ typedef enum
 void MM_voidPaintScreen(void);
 
 /* Paint ONE card in the given state. Symbols render as 2x glyphs
- * centered in the card. Card-aligned 24x24 rects only — no partial
+ * centered in the card. Card-aligned 24x24 rects only â€” no partial
  * overlap by contract. Symbol is 'Copy_chSym' (e.g. 'A').           */
 void MM_voidPaintCard(u8 Copy_u8CardIdx, MM_CardState_t Copy_eState,
                       char Copy_chSym);
 
 /* Yellow cursor ring around a card (visible=1) / erase it (visible=0).
- * The ring lives in the 2-px gaps — the card itself is untouched
+ * The ring lives in the 2-px gaps â€” the card itself is untouched
  * (the Math Quiz keypad-cursor pattern, third use).                 */
 void MM_voidPaintCursor(u8 Copy_u8CardIdx, u8 Copy_u8Visible);
 
-/* HUD cells — fixed-width opaque overwrites.                        */
+/* HUD cells â€” fixed-width opaque overwrites.                        */
 void MM_voidPaintPairs(u8 Copy_u8Pairs);
 void MM_voidPaintTries(u16 Copy_u16Tries);
 

@@ -7,9 +7,9 @@
  *  Reference: RM0368 (STM32F401xB/xC), Ch. 19: USART
  *
  *  BOOT-ORDER CONTRACT (all four are HARD prerequisites):
- *      1. MRCC_Init()  — clock tree matches the published model the
+ *      1. MRCC_Init()  â€” clock tree matches the published model the
  *         BRR math consumes
- *      2. MRCC_EnablePeripheralClock(MRCC_USART1) — writes to an
+ *      2. MRCC_EnablePeripheralClock(MRCC_USART1) â€” writes to an
  *         un-clocked USART are SILENTLY ignored (the classic
  *         "nothing works, no error anywhere" trap)
  *      3. GPIO AF wiring (this driver does NOT own pins):
@@ -19,10 +19,10 @@
  *              MGPIO_SetPinMode        (PORTA, PIN_10, ALT_FUNC)
  *              MGPIO_SetPinOutputConfig(PORTA, PIN_10, PUSH_PULL, HIGH)
  *              MGPIO_SetPinAltFunction (PORTA, PIN_10, AF7)
- *      4. MSYSTICK_Init() — blocking functions time out against the
+ *      4. MSYSTICK_Init() â€” blocking functions time out against the
  *         SysTick timebase; without it they hang
  *  Also recommended: MNVIC_Init() + MNVIC_SetPriority(MNVIC_USART1,
- *  3, 0) BEFORE first use — otherwise the USART IRQ sits at reset
+ *  3, 0) BEFORE first use â€” otherwise the USART IRQ sits at reset
  *  priority 0 (HIGHEST) and preempts EXTI/SysTick.
  *
  *  FRAMING CONTRACT (the ESP8266 pattern this driver is built for):
@@ -30,14 +30,14 @@
  *  application accumulates into a frame buffer. When the line goes
  *  idle (one character-time of silence after data) -> IdleCallback:
  *  the frame is complete, parse it now. No per-byte re-arming exists
- *  — the Rev 1 one-shot model could not survive 115200 baud (one
+ *  â€” the Rev 1 one-shot model could not survive 115200 baud (one
  *  byte every 86.8 us; re-arm latency during a TFT render exceeds
  *  that and silently overruns the link).
  *
  *  Revision history:
- *    Rev 1 — original API (one-shot RX; 9 arm-able interrupt sources,
+ *    Rev 1 â€” original API (one-shot RX; 9 arm-able interrupt sources,
  *            2 serviced; handler prototypes in the header)
- *    Rev 2 — continuous RX + IDLE framing; unserviced sources
+ *    Rev 2 â€” continuous RX + IDLE framing; unserviced sources
  *            rejected at enable; TX one-shot kept (storm-proof);
  *            TC callback added; handlers removed from the public
  *            contract; MUSART_ namespace sweep
@@ -52,7 +52,7 @@
 #include "STD_TYPES.h"
 
 /* =====================================================================
- *  Driver status codes — MUSART_ convention, matching the library
+ *  Driver status codes â€” MUSART_ convention, matching the library
  * ===================================================================== */
 typedef enum
 {
@@ -65,21 +65,21 @@ typedef enum
                                   the clock)                             */
     MUSART_BUSY,               /* Non-blocking TX while DR still full     */
     MUSART_NOT_SUPPORTED,      /* Interrupt source exists in hardware but
-                                  is NOT serviced — enabling it would
+                                  is NOT serviced â€” enabling it would
                                   storm the IRQ (see storm-safety map)   */
     MUSART_NOT_ENABLED         /* Peripheral UE=0 (blocking op on a
-                                  disabled USART — refuse, don't hang)   */
+                                  disabled USART â€” refuse, don't hang)   */
 } MUSART_ReturnType_t;
 
 /* =====================================================================
  *  Hardware instance ids
  *
- *  Values index the internal instance table — keep 0,1,2 in order.
+ *  Values index the internal instance table â€” keep 0,1,2 in order.
  *  (The F401 has no USART3/4/5; the family numbering jumps 2 -> 6.)
  * ===================================================================== */
 typedef enum
 {
-    MUSART_USART1 = 0,         /* APB2 — the ESP8266 link                */
+    MUSART_USART1 = 0,         /* APB2 â€” the ESP8266 link                */
     MUSART_USART2,             /* APB1                                    */
     MUSART_USART6              /* APB2                                    */
 } MUSART_USART_t;
@@ -104,13 +104,13 @@ typedef enum
     MUSART_PARITY_ODD
 } MUSART_Parity_t;
 
-/** Stop bits (CR2 STOP[1:0]) — values ARE the register encodings */
+/** Stop bits (CR2 STOP[1:0]) â€” values ARE the register encodings */
 typedef enum
 {
     MUSART_STOPBITS_1 = 0,     /* 00 */
     MUSART_STOPBITS_0_5,       /* 01 */
     MUSART_STOPBITS_2,         /* 10 */
-    MUSART_STOPBITS_1_5        /* 11 — mainly smartcard */
+    MUSART_STOPBITS_1_5        /* 11 â€” mainly smartcard */
 } MUSART_StopBits_t;
 
 /** TX/RX direction (CR1 TE & RE) */
@@ -121,7 +121,7 @@ typedef enum
     MUSART_MODE_TX_RX
 } MUSART_USARTMode_t;
 
-/** Oversampling (CR1 OVER8) — 8 halves the BRR fraction resolution
+/** Oversampling (CR1 OVER8) â€” 8 halves the BRR fraction resolution
  *  but allows higher baud at high PCLK; 16 is the default */
 typedef enum
 {
@@ -129,7 +129,7 @@ typedef enum
     MUSART_OVERSAMPLING_8
 } MUSART_Oversampling_t;
 
-/** Synchronous mode (CR2 CLKEN) — STUB: CPOL/CPHA/LBCL stay at reset
+/** Synchronous mode (CR2 CLKEN) â€” STUB: CPOL/CPHA/LBCL stay at reset
  *  defaults; complete this only if sync mode is ever needed */
 typedef enum
 {
@@ -140,17 +140,17 @@ typedef enum
 /* =====================================================================
  *  Interrupt sources (RM0368 USART interrupt map)
  *
- *  Only TXE / RXNE / TC / IDLE can be enabled — the other five
+ *  Only TXE / RXNE / TC / IDLE can be enabled â€” the other five
  *  return MUSART_NOT_SUPPORTED at enable time. They remain in the
  *  enum (they are real hardware sources) so a caller gets a LOUD
  *  rejection instead of a silent lockup.
  * ===================================================================== */
 typedef enum
 {
-    MUSART_INT_TXE = 0,        /* SERVICED — TxCallback                  */
-    MUSART_INT_RXNE,           /* SERVICED — RxCallback(byte), continuous*/
-    MUSART_INT_TC,             /* SERVICED — TxCompleteCallback          */
-	MUSART_INT_IDLE,           /* SERVICED — IdleCallback (frame done).
+    MUSART_INT_TXE = 0,        /* SERVICED â€” TxCallback                  */
+    MUSART_INT_RXNE,           /* SERVICED â€” RxCallback(byte), continuous*/
+    MUSART_INT_TC,             /* SERVICED â€” TxCompleteCallback          */
+	MUSART_INT_IDLE,           /* SERVICED â€” IdleCallback (frame done).
 	                                   FOOTGUN: arm IDLE only via
 	                                   MUSART_ReceiveEnable (arms RXNE+IDLE
 	                                   together). Arming IDLE ALONE through
@@ -162,7 +162,7 @@ typedef enum
 	                                   sequence's DR read discards the one
 	                                   byte (the frame's first) that reached
 	                                   RDR. */
-    MUSART_INT_PE,             /* NOT SUPPORTED — rejected at enable     */
+    MUSART_INT_PE,             /* NOT SUPPORTED â€” rejected at enable     */
     MUSART_INT_LBD,            /* NOT SUPPORTED                          */
     MUSART_INT_CTS,            /* NOT SUPPORTED                          */
     MUSART_INT_ERR             /* NOT SUPPORTED (FE/ORE/NF via EIE)      */
@@ -171,7 +171,7 @@ typedef enum
 /* ===================== Callback types ===================== */
 
 /** TX byte handed to the shift register (TXE): DR is empty, the byte
- *  is moving — "ready for the next write", NOT "on the wire". */
+ *  is moving â€” "ready for the next write", NOT "on the wire". */
 typedef void (*MUSART_TxCallback_t)(void);
 
 /** Transmission truly complete (TC): the LAST stop bit is on the wire
@@ -182,7 +182,7 @@ typedef void (*MUSART_TxCompleteCallback_t)(void);
  *  nothing slower. */
 typedef void (*MUSART_RxCallback_t)(u8 Copy_u8Data);
 
-/** Line idle after data — the accumulated frame is complete. Parse
+/** Line idle after data â€” the accumulated frame is complete. Parse
  *  here. Runs in ISR context. */
 typedef void (*MUSART_IdleCallback_t)(void);
 
@@ -194,7 +194,7 @@ typedef void (*MUSART_IdleCallback_t)(void);
  * @brief  Configures one USART from MUSART_config.h and enables it if
  *         the instance config says so. Must run after MRCC clock enable
  *         and GPIO AF wiring (see boot-order contract).
- * @note   Re-Init at runtime: legal (UE is cleared first — RM0368
+ * @note   Re-Init at runtime: legal (UE is cleared first â€” RM0368
  *         requires configuration with UE=0), but drops in-flight data.
  */
 MUSART_ReturnType_t MUSART_Init(MUSART_USART_t Copy_USART);
@@ -208,20 +208,20 @@ MUSART_ReturnType_t MUSART_Disable(MUSART_USART_t Copy_USART);
 /**
  * @brief  Arm one USART interrupt source + its NVIC line.
  *
- * TXE: one-shot per byte — the ISR disables TXEIE before calling
+ * TXE: one-shot per byte â€” the ISR disables TXEIE before calling
  *      TxCallback; for a stream, the callback writes the next byte
  *      via MUSART_SendByteNonBlocking (which re-arms).
- * RXNE: CONTINUOUS — every byte fires RxCallback until disabled.
+ * RXNE: CONTINUOUS â€” every byte fires RxCallback until disabled.
  *      This is the framing-workhorse; prefer MUSART_ReceiveEnable.
  * TC:  fires TxCompleteCallback once per completed transmission
  *      (flag cleared in-ISR by the write-0 idiom).
  * IDLE: fires IdleCallback on every idle-after-data detection
  *      (flag cleared in-ISR by the SR-read + DR-read sequence).
- * PE/LBD/CTS/ERR: MUSART_NOT_SUPPORTED — never arm an unserviced
+ * PE/LBD/CTS/ERR: MUSART_NOT_SUPPORTED â€” never arm an unserviced
  *      source; that is an interrupt-storm lockup by construction.
  *
  * @note   NVIC enable happens ONLY after parameter validation (Rev 1
- *         enabled the line first — a bad argument still armed it).
+ *         enabled the line first â€” a bad argument still armed it).
  */
 MUSART_ReturnType_t MUSART_InterruptEnable (MUSART_USART_t Copy_USART, MUSART_Interrupt_t Copy_Interrupt);
 MUSART_ReturnType_t MUSART_InterruptDisable(MUSART_USART_t Copy_USART, MUSART_Interrupt_t Copy_Interrupt);
@@ -240,7 +240,7 @@ MUSART_ReturnType_t MUSART_SendByteBlocking(MUSART_USART_t Copy_USART, u8 Copy_u
 /**
  * @brief  Receive one byte, waiting (bounded) for RXNE, then reading
  *         DR (which also clears a latched ORE).
- * @note   If an overrun already occurred, DR holds the OLDER byte —
+ * @note   If an overrun already occurred, DR holds the OLDER byte â€”
  *         the newer one was lost by hardware; the read just recovers
  *         the link without hanging.
  */
@@ -250,7 +250,7 @@ MUSART_ReturnType_t MUSART_ReceiveByteBlocking(MUSART_USART_t Copy_USART, u8 *Co
 
 /**
  * @brief  Start a one-byte non-blocking transmission: writes DR (must
- *         already be empty — else MUSART_BUSY) and arms the TXE
+ *         already be empty â€” else MUSART_BUSY) and arms the TXE
  *         interrupt. TxCallback fires once, when the byte reaches the
  *         shift register; the ISR disarms TXEIE itself (storm-proof).
  *         Chain bytes from the callback for streams.
@@ -262,18 +262,18 @@ MUSART_ReturnType_t MUSART_SendByteNonBlocking(MUSART_USART_t Copy_USART, u8 Cop
  *         + NVIC): every arriving byte -> RxCallback, each idle-after-
  *         data -> IdleCallback. THE ESP8266 FRAMING PRIMITIVE.
  * @note   If a byte is already pending in DR when armed, the IRQ fires
- *         immediately with it — arming never discards buffered data.
+ *         immediately with it â€” arming never discards buffered data.
  */
 MUSART_ReturnType_t MUSART_ReceiveEnable (MUSART_USART_t Copy_USART);
 
 /** Disarm continuous reception (RXNEIE + IDLEIE). NVIC line stays
- *  enabled — harmless; re-arm with ReceiveEnable. */
+ *  enabled â€” harmless; re-arm with ReceiveEnable. */
 MUSART_ReturnType_t MUSART_ReceiveDisable(MUSART_USART_t Copy_USART);
 
 /* --------------------- Callback setters --------------------- */
 /* NULL is a VALID value for every setter: it UNREGISTERS the callback
  * (matching the MSYSTICK convention). An event with no callback set
- * is simply ignored — never a crash. */
+ * is simply ignored â€” never a crash. */
 MUSART_ReturnType_t MUSART_SetTxCallback         (MUSART_USART_t Copy_USART, MUSART_TxCallback_t         Copy_pfCallback);
 MUSART_ReturnType_t MUSART_SetTxCompleteCallback (MUSART_USART_t Copy_USART, MUSART_TxCompleteCallback_t Copy_pfCallback);
 MUSART_ReturnType_t MUSART_SetRxCallback         (MUSART_USART_t Copy_USART, MUSART_RxCallback_t         Copy_pfCallback);
@@ -281,7 +281,7 @@ MUSART_ReturnType_t MUSART_SetIdleCallback       (MUSART_USART_t Copy_USART, MUS
 
 /* Rev 5: number of bytes this instance's ISR has DROPPED due to framing
  * error (always) or the noise flag (MUSART_DROP_NOISY_BYTES). A
- * link-health instrument — read it after transfers. */
+ * link-health instrument â€” read it after transfers. */
 MUSART_ReturnType_t MUSART_GetFramingErrorCount(MUSART_USART_t Copy_USART, u32 *Copy_pu32Count);
 
 /* =====================================================================
@@ -311,7 +311,7 @@ MUSART_ReturnType_t MUSART_GetFramingErrorCount(MUSART_USART_t Copy_USART, u32 *
  *      MUSART_SetIdleCallback (MUSART_USART1, Esp_FrameComplete);
  *      MUSART_ReceiveEnable   (MUSART_USART1);
  *
- *  (IRQ handlers are NOT part of the public contract — the startup
+ *  (IRQ handlers are NOT part of the public contract â€” the startup
  *  file's weak aliases link to this driver's definitions directly.)
  * ===================================================================== */
 

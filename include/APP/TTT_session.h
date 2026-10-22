@@ -1,34 +1,34 @@
 /*
- * TTT_session.h — the online session layer, PUBLIC API.
+ * TTT_session.h â€” the online session layer, PUBLIC API.
  *  LOCATION: APP/ (flat).
  *
  *  STAGE 1 surface (unchanged): the command wrappers, the
  *  credential, the event queue, the counters, the snapshot
  *  pass-through. STAGE 2 ADDITIONS (M9-M14, annotated in
  *  TTT_session.c): the net states, their screens, the retry
- *  machinery, and the policy half of the event dispatcher —
+ *  machinery, and the policy half of the event dispatcher â€”
  *  all moved DOWN from main.c.
  *
  *  THE EVENT SPLIT (M11): the session CONSUMES the policy
  *  events (ROOM_CREATED in full; ROOM_GONE / RESP_ERR /
  *  CMD_TIMEOUT for its own states + the retry arming) and
- *  forwards everything else 1:1 — the game's dispatcher holds
+ *  forwards everything else 1:1 â€” the game's dispatcher holds
  *  the game cases. Consumers see the forwarded set only.
  *
- *  THE RTOS ABSORPTION (this revision — File 2 of the absorption
+ *  THE RTOS ABSORPTION (this revision â€” File 2 of the absorption
  *  package): the session is now a PURE HUB-CONTEXT CONSUMER.
- *    - The NET pump call is GONE — the NET task owns the wire
+ *    - The NET pump call is GONE â€” the NET task owns the wire
  *      (spawned at boot; the link brought up only at the online
  *      entry, per the deferred-link ruling).
- *    - enumInit resets SESSION STATE ONLY, per-LAUNCH — the TTT
+ *    - enumInit resets SESSION STATE ONLY, per-LAUNCH â€” the TTT
  *      module calls it at Run() entry (the session's lifetime is
  *      a game launch, not a boot).
  *    - The FOTA event family is routed away at the consume entry,
  *      COUNTED (the TTS enum cannot represent it; the FOTA wiring
  *      milestone's drain routes those events to the orchestrator
- *      before the session ever sees them — this guard is the floor
+ *      before the session ever sees them â€” this guard is the floor
  *      that holds regardless of the routing's final shape).
- *  ZERO FreeRTOS knowledge in this layer — the seam did all the
+ *  ZERO FreeRTOS knowledge in this layer â€” the seam did all the
  *  work: no OS includes, no kernel calls, nothing.
  */
 
@@ -124,7 +124,7 @@ typedef enum
     TTS_REQ_BOOT               /* cancel to the hub menu */
 } TTS_Request_t;
 
-/* Net-state entry points — the screens moved from main.c
+/* Net-state entry points â€” the screens moved from main.c
  * (M10); each paints, resets its own flags, sets the state. */
 void TTT_SESSION_voidEnterNetWait(u32 Copy_u32Now);   /* was PaintNetWait + timers  */
 void TTT_SESSION_voidGoLobby(void);                   /* was PaintLobby             */
@@ -132,14 +132,14 @@ void TTT_SESSION_voidGoHostWait(u32 Copy_u32Now);     /* was PaintHostWait + pol
 void TTT_SESSION_voidGoEntry(void);                   /* was PaintEntry + slots     */
 void TTT_SESSION_voidNetFail(void);                   /* was PaintNetFail           */
 
-/* The net states' loop handler — main calls it when the state
+/* The net states' loop handler â€” main calls it when the state
  * is session-owned (APP_IS_NET_STATE). Branch bodies are the
  * old main.c cases, verbatim. Returns a request when a
  * transition must cross the ownership boundary. */
 TTS_Request_t TTT_SESSION_enumRunNetState(u32 Copy_u32Now, u8 Copy_u8HaveIr,
                                           VirtualButton_t Copy_eButton);
 
-/* The online-flow flag (M12: re-homed to the session — a FLOW
+/* The online-flow flag (M12: re-homed to the session â€” a FLOW
  * property; the game reads and sets it downward via these). */
 void TTT_SESSION_voidSetOnlineMode(u8 Copy_u8On);
 u8   TTT_SESSION_u8OnlineMode(void);
@@ -156,14 +156,14 @@ u8   TTT_SESSION_u8ConsumeNetFailExit(void);
 
 /* ---- init ----
  * ABSORPTION: session-state reset ONLY (the NET init and the D15
- * double emission live in NET's bring-up command — the deferred
+ * double emission live in NET's bring-up command â€” the deferred
  * link). Call at the TTT module's Run() entry (per-launch state),
  * not at boot. */
 TTS_EnumStatus_t TTT_SESSION_enumInit(void);
 
 /* ---- task ----
  * ABSORPTION: the NET pump call is REMOVED (the NET task owns the
- * wire). What remains is the DRAIN — the session's event
+ * wire). What remains is the DRAIN â€” the session's event
  * consumption, HUB context. Call every module-loop pass. */
 TTS_EnumStatus_t TTT_SESSION_enumTask(void);
 

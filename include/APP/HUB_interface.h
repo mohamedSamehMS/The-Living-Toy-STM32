@@ -1,11 +1,11 @@
 /*
- * HUB_interface.h — the hub's PUBLIC contract: the result type, the
+ * HUB_interface.h â€” the hub's PUBLIC contract: the result type, the
  *  dispatch row, and the hub lifecycle.
  *  LOCATION: APP/ (flat).
  *
  *  THE ARCHITECTURE IN ONE PARAGRAPH:
  *  The hub is a LAUNCHER, not a supervisor. Menus are DATA (one
- *  generic list engine — HUB_menu — renders and navigates any menu
+ *  generic list engine â€” HUB_menu â€” renders and navigates any menu
  *  descriptor); games are RUN MODULES that own their loop until they
  *  RETURN a result. The hub suspends inside Run(), wakes with an
  *  answer, shows the GameOver screen, and either relaunches or goes
@@ -21,14 +21,14 @@
  *
  *  WHAT HAPPENED TO Screen_t (the old design's screen struct):
  *  Dissolved into the menu engine. The old design's five hand-built
- *  menu screens were all the same thing — a list — so they collapsed
+ *  menu screens were all the same thing â€” a list â€” so they collapsed
  *  into ONE engine plus five data descriptors. Non-list screens
  *  (GameOver) are menu descriptors too. Adding a screen = adding a
  *  struct of strings, not code.
  *
  *  Revision history:
- *    Rev 1 — original listing (approved)
- *    Rev 2 — documentation pass
+ *    Rev 1 â€” original listing (approved)
+ *    Rev 2 â€” documentation pass
  *
  *  Created on: Sep 30, 2026
  */
@@ -37,9 +37,9 @@
 #include "STD_TYPES.h"
 
 /* The exit seam: what one Run() of a game reports back.
- *  GAMEOVER  — the game ran to its natural end (death / last
+ *  GAMEOVER  â€” the game ran to its natural end (death / last
  *              question / board full). GetScore() is valid NOW.
- *  EXITED    — the player left through the exit seam (BACK ->
+ *  EXITED    â€” the player left through the exit seam (BACK ->
  *              "EXIT? 0 AGAIN" -> BACK). No score is consumed.
  * The hub treats the two differently: GAMEOVER goes to the GameOver
  * screen (and the leaderboard update); EXITED goes straight home.   */
@@ -48,14 +48,14 @@ typedef enum { GAME_RESULT_GAMEOVER = 0, GAME_RESULT_EXITED } GameResult_t;
 /* One row of the game dispatch table. The hub's InGame "state" is
  * nothing but: call row->Init (if any), call row->Run, read the
  * result. The table is walked by the home menu to build the game
- * list — adding a fifth game = one row here + one menu row string.
+ * list â€” adding a fifth game = one row here + one menu row string.
  *
- *  Init      — optional per-launch setup (NULL = none). Runs BEFORE
+ *  Init      â€” optional per-launch setup (NULL = none). Runs BEFORE
  *              every Run(), so settings changed in the Settings
  *              screen take effect on the very next launch. Must be
  *              idempotent and cheap.
- *  Run       — owns the loop; returns only on end or player exit.
- *  GetScore  — valid only after a GAMEOVER return; the hub reads it
+ *  Run       â€” owns the loop; returns only on end or player exit.
+ *  GetScore  â€” valid only after a GAMEOVER return; the hub reads it
  *              exactly once, then owns the number (leaderboard).   */
 typedef struct
 {

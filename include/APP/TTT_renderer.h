@@ -1,9 +1,9 @@
 /*
- * TTT_renderer.h — the TFT-side contract for Tic-Tac-Toe.
+ * TTT_renderer.h â€” the TFT-side contract for Tic-Tac-Toe.
  *  LOCATION: APP/ (flat).
  *
  *  The renderer paints the board, pieces, win line, and HUD. It knows
- *  nothing about turns, AI, or rules — the game logic drives this
+ *  nothing about turns, AI, or rules â€” the game logic drives this
  *  interface. Pixels exist only inside TTT_renderer.c.
  *
  *  Preconditions: HTFT_voidInit() has run; ms timebase alive.
@@ -41,7 +41,7 @@ typedef enum
 void TTT_voidPaintBoard(void);
 
 /* Paint one piece into a cell (EMPTY = erase that cell's area).
- * Cell-aligned rectangles only — no partial overlap by contract.    */
+ * Cell-aligned rectangles only â€” no partial overlap by contract.    */
 void TTT_voidPaintCell(u8 Copy_u8CellIdx, TTT_CellRole_t Copy_eRole);
 
 /* Strike line through the winning 3 cells (start/end = cell idx).   */
@@ -59,7 +59,7 @@ void TTT_voidPaintScores(u8 Copy_u8XWins, u8 Copy_u8OWins, u8 Copy_u8Draws);
 /** @brief Draw the 1-px yellow cursor ring just inside the cell's
  *         clear area (33x33, pixel-centered). Drawn OVER any cell
  *         state. ERASING is the CALLER's job: PaintCell(idx, role)
- *         fully repaints the cell — the renderer is stateless and
+ *         fully repaints the cell â€” the renderer is stateless and
  *         cannot know what to restore underneath.                   */
 void TTT_voidPaintCursor(u8 Copy_u8CellIdx);
 

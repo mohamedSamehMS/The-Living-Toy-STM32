@@ -1,25 +1,25 @@
 /*
- * APP_FOTA_NET_config.h — configuration of the FOTA orchestrator
- * (FOTA seat, v1.2 — the consent deltas).
+ * APP_FOTA_NET_config.h â€” configuration of the FOTA orchestrator
+ * (FOTA seat, v1.2 â€” the consent deltas).
  *
  *  Revision history:
- *    v1.2 — POLICY 1 un-blocked (the compare exists; the lexical
+ *    v1.2 â€” POLICY 1 un-blocked (the compare exists; the lexical
  *           trap closed). POLICY guidance updated: the compare
  *           gates BOTH modes in code (structural); this knob is
  *           now the escape hatch for lab/reinstall work only.
- *    v1.0 — first delivery.
+ *    v1.0 â€” first delivery.
  */
 
 #ifndef APP_FOTA_NET_CONFIG_H_
 #define APP_FOTA_NET_CONFIG_H_
 
-/* AUTO-BEGIN: 1 = the bench shape — a qualifying notify starts the
- * update automatically. 0 = THE HUB-DAY SHAPE — the notify is
+/* AUTO-BEGIN: 1 = the bench shape â€” a qualifying notify starts the
+ * update automatically. 0 = THE HUB-DAY SHAPE â€” the notify is
  * surfaced via the callback; the update proceeds only on
  * APP_FOTA_NET_enumStart(). */
 #define APP_FOTA_NET_AUTO_BEGIN         0u
 
-/* VERSION POLICY — v1.2 NOTE: the compare now gates BOTH modes in
+/* VERSION POLICY â€” v1.2 NOTE: the compare now gates BOTH modes in
  * code (the NOTIFIED transition requires a strictly-newer offer,
  * whichever mode runs; see APP_FOTA_NET.c). This knob therefore
  * exists ONLY as the lab escape hatch:
@@ -28,7 +28,7 @@
  *   0 = accept ANY offer (lab/reinstall work: re-sending the same
  *       version deliberately, e.g. a corrupted-staging re-download).
  * USE 0 ONLY ON THE BENCH, WITH THE LOOP EDGE IN MIND (C12's re-
- * offer + auto-begin + any-offer = the update loop — FOTA-49). */
+ * offer + auto-begin + any-offer = the update loop â€” FOTA-49). */
 #define APP_FOTA_NET_VERSION_POLICY     1u
 
 /* BEGIN <-> BUSY retry (the early-BEGIN race: the ESP still staging

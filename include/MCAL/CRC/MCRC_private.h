@@ -3,10 +3,10 @@
  *
  *  PRIVATE header of the MCRC driver. Hardware facts only.
  *
- *  Reference: RM0368 Rev 6, Ch 4 (CRC), §4.4 — offsets verified
+ *  Reference: RM0368 Rev 6, Ch 4 (CRC), Â§4.4 â€” offsets verified
  *
  *  Revision history:
- *    Rev 1 — first release
+ *    Rev 1 â€” first release
  *
  *  Created on: Sep 15, 2026
  *      Author: dell
@@ -22,11 +22,11 @@
 
 typedef struct
 {
-    volatile u32 DR;        /* 0x00 : Data register — write word to feed,
+    volatile u32 DR;        /* 0x00 : Data register â€” write word to feed,
                                              read for the running/final CRC */
     volatile u32 IDR;       /* 0x04 : Independent data (8-bit scratchpad,
-                                      UNRELATED to the checksum — unused)  */
-    volatile u32 CR;        /* 0x08 : Control — bit 0 RESET only. Writing 1
+                                      UNRELATED to the checksum â€” unused)  */
+    volatile u32 CR;        /* 0x08 : Control â€” bit 0 RESET only. Writing 1
                                       resets DR to 0xFFFFFFFF; the bit reads
                                       back 0 (self-clearing).               */
 } MCRC_Registers_t;

@@ -1,5 +1,5 @@
 /*
- * TTT_app.c — the shared flow-state variable. Three lines, by
+ * TTT_app.c â€” the shared flow-state variable. Three lines, by
  * design: the state is app-common, not any module's private.
  *  LOCATION: APP/ (flat).
  */

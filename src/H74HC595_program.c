@@ -1,11 +1,11 @@
 /*
- * H74HC595_program.c — 74HC595 shift-register driver, IMPLEMENTATION
+ * H74HC595_program.c â€” 74HC595 shift-register driver, IMPLEMENTATION
  *
- *  Project 4 — Interactive Gaming Hub (ARM Embedded Systems Diploma)
+ *  Project 4 â€” Interactive Gaming Hub (ARM Embedded Systems Diploma)
  *  Target  : STM32F401CCU6 (WeAct Black Pill), register-level bare metal
  *  Layer   : HAL -> MCAL (MGPIO). Deliberately no MSPI dependency in
  *            this revision (plain GPIO bit-bang); a future backend can
- *            put SER/SRCLK on real SPI pins and keep RCLK as GPIO —
+ *            put SER/SRCLK on real SPI pins and keep RCLK as GPIO â€”
  *            the 595 tolerates sharing an SPI bus safely: foreign
  *            transfers just shift junk into the register, and junk is
  *            harmless because outputs only change on OUR latch pulse,
@@ -28,7 +28,7 @@
  *  RUNTIME CHECKS NOTHING. All pins are config constants, so runtime
  *  calls cannot fail after a successful init; first init error is
  *  latched in Global_udtInitError for debugger inspection. Runtime
- *  calls are also ISR-conditional on the timing knob — see config.
+ *  calls are also ISR-conditional on the timing knob â€” see config.
  *
  *  Created on: Aug 14, 2026
  *      Author: dell
@@ -57,11 +57,11 @@
  * so ISR call sites stay clean; read this after Init during bring-up.
  *   INVALID_PIN/PORT -> config header names a pin this package lacks
  *   OK but outputs dead -> port clock not enabled (MGPIO cannot see
- *   the un-clocked case — hardware ignores the write, driver reports
+ *   the un-clocked case â€” hardware ignores the write, driver reports
  *   success), or wiring. */
 static MGPIO_ReturnType_t Global_udtInitError = MGPIO_OK;
 
-/* Record the FIRST error only — root cause first, and later config
+/* Record the FIRST error only â€” root cause first, and later config
  * calls still run (partial init is more useful in bring-up than
  * aborting after the first problem). */
 static void HC595_voidTry(MGPIO_ReturnType_t Copy_udtStatus)
@@ -76,11 +76,11 @@ static void HC595_voidTry(MGPIO_ReturnType_t Copy_udtStatus)
  * whatever SER holds into stage 0 of the register; every existing
  * bit moves one stage deeper (toward QH and out QH' into the next
  * chip). The two versions:
- *   delayed (knob > 0): busy-wait between edges — breadboard rescue
+ *   delayed (knob > 0): busy-wait between edges â€” breadboard rescue
  *   default (knob = 0): back-to-back writes. SAFETY ARGUMENT: the
  *     74HC595 needs ~tens of ns setup/pulse at 3.3 V, and the time
  *     spent inside ONE MGPIO_SetPinValue call (validation + a BSRR
- *     store) is a few hundred ns at 84 MHz — the data-pin write that
+ *     store) is a few hundred ns at 84 MHz â€” the data-pin write that
  *     precedes each clock pulse therefore provides 10x the required
  *     setup time by accident. Hold time is met trivially: the next
  *     SER change happens only after this falling edge. */
@@ -92,7 +92,7 @@ static void HC595_voidPulseShiftClock(void)
     MGPIO_SetPinValue(HC595_SHIFT_CLOCK_PORT, HC595_SHIFT_CLOCK_PIN, MGPIO_PIN_LOW);
     MSYSTICK_voidSetBusyWait_us(HC595_MIN_HALF_CLOCK_US);
 #else
-    /* No delay — see the safety argument above. */
+    /* No delay â€” see the safety argument above. */
     MGPIO_SetPinValue(HC595_SHIFT_CLOCK_PORT, HC595_SHIFT_CLOCK_PIN, MGPIO_PIN_HIGH);
     MGPIO_SetPinValue(HC595_SHIFT_CLOCK_PORT, HC595_SHIFT_CLOCK_PIN, MGPIO_PIN_LOW);
 #endif
@@ -100,7 +100,7 @@ static void HC595_voidPulseShiftClock(void)
 
 /* One latch pulse: LOW -> HIGH -> LOW. On the RISING edge every chip
  * copies its shift register to its output latches in the same clock
- * (RCLK is shared by the whole chain) — this single edge is the
+ * (RCLK is shared by the whole chain) â€” this single edge is the
  * ATOMIC OUTPUT UPDATE. Between latches the outputs are frozen: you
  * can shift garbage all day and nothing appears on the pins. That is
  * the property both the no-ghosting matrix scan and the "595 can
@@ -113,7 +113,7 @@ static void HC595_voidPulseLatchClock(void)
     MGPIO_SetPinValue(HC595_LATCH_CLOCK_PORT, HC595_LATCH_CLOCK_PIN, MGPIO_PIN_LOW);
     MSYSTICK_voidSetBusyWait_us(HC595_MIN_HALF_CLOCK_US);
 #else
-    /* No delay — same margin argument as the shift clock. */
+    /* No delay â€” same margin argument as the shift clock. */
     MGPIO_SetPinValue(HC595_LATCH_CLOCK_PORT, HC595_LATCH_CLOCK_PIN, MGPIO_PIN_HIGH);
     MGPIO_SetPinValue(HC595_LATCH_CLOCK_PORT, HC595_LATCH_CLOCK_PIN, MGPIO_PIN_LOW);
 #endif
@@ -123,7 +123,7 @@ static void HC595_voidPulseLatchClock(void)
 
 void H74HC595_voidInit(void)
 {
-    /* Zero payload sized to the chain — used to clear the registers.
+    /* Zero payload sized to the chain â€” used to clear the registers.
      * Sized from the config constant, so it always matches the chain
      * even if the count changes later. */
     u8 Local_u8Blank[NUMBER_OF_74HC595_CHIPS] = {0};
@@ -137,7 +137,7 @@ void H74HC595_voidInit(void)
      * resulting bit-bang clock is far below any speed limit anyway.
      * Idle LOW on all three: clocks rest at their inactive level and
      * SER idles low, so nothing accidental can clock a bit in.
-     * Every call checked via Try() — first error latched. */
+     * Every call checked via Try() â€” first error latched. */
 
     /* Data pin (SER) */
     HC595_voidTry(MGPIO_SetPinMode(HC595_DATA_PORT, HC595_DATA_PIN, MGPIO_MODE_OUTPUT));
@@ -155,12 +155,12 @@ void H74HC595_voidInit(void)
     HC595_voidTry(MGPIO_SetPinValue(HC595_LATCH_CLOCK_PORT, HC595_LATCH_CLOCK_PIN, MGPIO_PIN_LOW));
 
     /* --- Clear the chain ------------------------------------------------
-     * Shift-register contents are INDETERMINATE at power-up — until
+     * Shift-register contents are INDETERMINATE at power-up â€” until
      * the first latch the outputs can drive anything (LED matrix:
      * random LEDs). One SendData of zeros shifts known bits through
      * every stage and latches: all outputs LOW, known dark state
      * from init until the first real transfer. Reuses the production
-     * path instead of a bespoke loop — one code path, one test. */
+     * path instead of a bespoke loop â€” one code path, one test. */
     H74HC595_voidSendData(Local_u8Blank);
 }
 
@@ -177,7 +177,7 @@ void H74HC595_voidSendData(const u8* Copy_pu8DataArray)
         return;
     }
 
-    /* CHIP ORDER — array order = near->far travel order:
+    /* CHIP ORDER â€” array order = near->far travel order:
      * chip 0's byte is shifted FIRST, gets pushed one chip deeper by
      * every later byte, and therefore ends up in the chip FARTHEST
      * from the MCU; the LAST byte stays in the chip wired directly to
@@ -188,13 +188,13 @@ void H74HC595_voidSendData(const u8* Copy_pu8DataArray)
     {
         u8 Local_u8Data = Copy_pu8DataArray[Local_u8Chip];
 
-        /* BIT ORDER — MSB first: bit 7 is shifted first and travels
+        /* BIT ORDER â€” MSB first: bit 7 is shifted first and travels
          * 8 stages to Q7/QH; bit 0 shifts last into stage 0. Chosen
          * to match SPI mode-0 framing, so payloads stay byte-for-byte
          * compatible with a future MSPI backend. */
         for (Local_u8Bit = 0; Local_u8Bit < 8; Local_u8Bit++)
         {
-            /* Present the bit on SER BEFORE clocking it in —
+            /* Present the bit on SER BEFORE clocking it in â€”
              * setup time is provided by the MGPIO call overhead
              * itself (see the shift-clock comment). The ternary
              * maps the extracted 0/1 to the enum-valued pin levels
@@ -209,7 +209,7 @@ void H74HC595_voidSendData(const u8* Copy_pu8DataArray)
         }
     }
 
-    /* Latch ONLY at the very end — N*8 bits commit to the outputs in
+    /* Latch ONLY at the very end â€” N*8 bits commit to the outputs in
      * one edge. Latching per byte would expose half-transferred
      * states on the pins (on the matrix: torn scan lines, since the
      * far chip would still hold the PREVIOUS line's column bits). */

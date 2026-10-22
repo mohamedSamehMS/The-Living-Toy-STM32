@@ -9,20 +9,20 @@
  *
  *  Reference: RM0368 (STM32F401xB/xC), Ch. 10: EXTI / SYSCFG
  *
- *  INCLUDE NOTE: this header includes MEXTI_interface.h — a genuine
+ *  INCLUDE NOTE: this header includes MEXTI_interface.h â€” a genuine
  *  (and forced) dependency, unlike MUSART's removed include: the
  *  table's STRUCT MEMBER TYPES (MEXTI_LineNumber_t, MGPIO_Port_t,
  *  MEXTI_Trigger_t) are not lazily expandable, they must resolve at
  *  parse time. Macro enum NAMES resolve at use time; member TYPES
  *  do not.
  *
- *  The table is `static` in a header — this file must be included by
+ *  The table is `static` in a header â€” this file must be included by
  *  MEXTI_program.c ONLY (the MEXTI-style pattern MSPI's config also
  *  follows). Including it anywhere else silently duplicates it.
  *
  *  Revision history:
- *    Rev 1 — original (not self-contained; silent default paths)
- *    Rev 2 — self-contained includes; MGPIO_Port_t replaces the
+ *    Rev 1 â€” original (not self-contained; silent default paths)
+ *    Rev 2 â€” self-contained includes; MGPIO_Port_t replaces the
  *            duplicate MEXTI_Port_t; rows are runtime-validated by
  *            Init (bad line/port/trigger/state now fail loudly)
  *
@@ -34,10 +34,10 @@
 #define MEXTI_CONFIG_H_
 
 #include "STD_TYPES.h"
-#include <MCAL/GPIO/MGPIO_interface.h>   /* MGPIO_Port_t — the port field
+#include <MCAL/GPIO/MGPIO_interface.h>   /* MGPIO_Port_t â€” the port field
                                             REUSES the MGPIO type (values
                                             0/1/2 = A/B/C = EXTICR
-                                            encodings — asserted in
+                                            encodings â€” asserted in
                                             MEXTI_program.c)             */
 #include <MCAL/EXTI/MEXTI_interface.h>   /* line + trigger enum types     */
 
@@ -45,7 +45,7 @@
 #define MEXTI_ENABLED    1u
 #define MEXTI_DISABLED   0u
 
-/** One row per EXTI line this project uses — edit to match wiring */
+/** One row per EXTI line this project uses â€” edit to match wiring */
 typedef struct
 {
     MEXTI_LineNumber_t   Line;        /* EXTI line 0..15                       */
@@ -55,12 +55,12 @@ typedef struct
 } MEXTI_ConfigEntry_t;
 
 /* Current Project 4 wiring:
- *   Lines 0..3  : Port A, falling — buttons to GND, internal pull-ups
- *                 (each has its OWN NVIC IRQ — positions 6..10)
- *   Line 10/13  : Port B, falling — additional buttons, SHARING the
+ *   Lines 0..3  : Port A, falling â€” buttons to GND, internal pull-ups
+ *                 (each has its OWN NVIC IRQ â€” positions 6..10)
+ *   Line 10/13  : Port B, falling â€” additional buttons, SHARING the
  *                 EXTI15_10 IRQ (position 40)
  *   Everything else: configured but disabled, reserved for expansion
- *   PC13 users beware: line 13 routed to PORTB here, NOT port C — the
+ *   PC13 users beware: line 13 routed to PORTB here, NOT port C â€” the
  *   onboard LED pin is PC13, and the PC13/PC15 pins carry LSE duties. */
 static const MEXTI_ConfigEntry_t MEXTI_LinesConfig[] =
 {

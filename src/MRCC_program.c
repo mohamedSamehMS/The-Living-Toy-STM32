@@ -233,7 +233,7 @@ MRCC_ReturnType_t MRCC_Init(void)
     }
 
 #else
-#error "MRCC: SYSTEM_CLOCK not recognised — check MRCC_config.h"
+#error "MRCC: SYSTEM_CLOCK not recognised - check MRCC_config.h"
 #endif
 
     return Local_ReturnStatus;

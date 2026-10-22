@@ -1,5 +1,5 @@
 /*
- * HUB_renderer.c — the hub's painters. HTFT surface used: FillScreen,
+ * HUB_renderer.c â€” the hub's painters. HTFT surface used: FillScreen,
  *  DrawString2x, DrawHLine, DrawString. Nothing else.
  */
 #include <HAL/TFT/HTFT_interface.h>
@@ -7,7 +7,7 @@
 #include "APP/HUB_config.h"
 
 /* 2x title centering: (128 - 16*len)/2. len is counted, not guessed
- * — a longer title than 8 chars would overflow the line (16 px per
+ * â€” a longer title than 8 chars would overflow the line (16 px per
  * 2x char, 128 px per line), so titles are 1..8 chars by contract. */
 static void HUB_RENDERER_privateCenter2x(const char *Copy_pchText, u16 *Copy_pu16X)
 {
@@ -22,7 +22,7 @@ static void HUB_RENDERER_privateCenter2x(const char *Copy_pchText, u16 *Copy_pu1
 void HUB_RENDERER_voidPaintFrame(const char *Copy_pchTitle, const char *Copy_pchInfo)
 {
     u16 Local_u16X;
-    /* Full wipe first — GRAM is never trusted across transitions
+    /* Full wipe first â€” GRAM is never trusted across transitions
      * (the screen-is-cache-of-state rule, applied at menu scale).  */
     HTFT_voidFillScreen(HUB_CFG_COLOR_BG);
     HUB_RENDERER_privateCenter2x(Copy_pchTitle, &Local_u16X);
@@ -39,19 +39,19 @@ void HUB_RENDERER_voidPaintRow(u8 Copy_u8RowIdx, const char *Copy_pchLabel,
 {
     u16 Local_u16Y = (u16)(HUB_MENU_ROW_Y0 + ((u16)Copy_u8RowIdx * HUB_MENU_ROW_PITCH));
 
-    /* Arrow cell: ">" or " " — the space draw is the ERASE. Opaque
+    /* Arrow cell: ">" or " " â€” the space draw is the ERASE. Opaque
      * 1x cell, same rect every time: selection flicker is impossible
      * by construction (Law 2, same-rect replace).                   */
     HTFT_voidDrawString(HUB_MENU_ARROW_X, Local_u16Y,
                         (Copy_u8Selected != 0u) ? ">" : " ",
                         HUB_CFG_COLOR_CURSOR, HUB_CFG_COLOR_BG);
 
-    /* Label: opaque cell — repainting a label always lands clean.   */
+    /* Label: opaque cell â€” repainting a label always lands clean.   */
     HTFT_voidDrawString(HUB_MENU_LABEL_X, Local_u16Y, Copy_pchLabel,
                         HUB_CFG_COLOR_TEXT, HUB_CFG_COLOR_BG);
 
     /* Value: copy into a FIXED-WIDTH field, padded right with
-     * spaces. The padding is the whole trick — "EASY" fully covers
+     * spaces. The padding is the whole trick â€” "EASY" fully covers
      * a previous "NORMAL" because both render as exactly 5 opaque
      * cells. Without the pad, a shrinking value leaves ghosts (the
      * Math Quiz centered-content lesson, pre-empted).               */

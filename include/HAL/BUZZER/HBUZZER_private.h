@@ -1,8 +1,8 @@
 /*
- * HBUZZER_private.h — shared buzzer HAL driver, PRIVATE header
+ * HBUZZER_private.h â€” shared buzzer HAL driver, PRIVATE header
  *
  *  Never include from HAL-consumer or application code. Internal
- *  types and prototypes only — all state is file-static in
+ *  types and prototypes only â€” all state is file-static in
  *  HBUZZER_program.c (the MSYSTICK Rev-2 lesson: no externs).
  *
  *  Created on: Oct 2, 2026
@@ -14,7 +14,7 @@
 #include "STD_TYPES.h"
 #include "HBUZZER_interface.h"
 
-/* Output mode — what the driver is currently doing to TIM10 */
+/* Output mode â€” what the driver is currently doing to TIM10 */
 typedef enum
 {
     HBUZZER_MODE_SILENT = 0,    /* nothing sounding; TIM10 untouched   */
@@ -23,7 +23,7 @@ typedef enum
 } HBUZZER_Mode_t;
 
 /* THE tone-end mechanism: registered with MTIM as TIM10's update
- * callback. Runs in ISR context at TIM10's priority — register
+ * callback. Runs in ISR context at TIM10's priority â€” register
  * writes only, no kernel calls, nothing heavier.                     */
 static void HBUZZER_privateUpdateISR(void);
 

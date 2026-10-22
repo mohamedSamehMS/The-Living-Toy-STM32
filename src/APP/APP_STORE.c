@@ -1,7 +1,7 @@
 /*
- * APP_STORE.c — RAM backing store.
+ * APP_STORE.c â€” RAM backing store.
  *
- *  Defensive indexing: out-of-range indices are ignored/return 0 —
+ *  Defensive indexing: out-of-range indices are ignored/return 0 â€”
  *  a wrong game id can never corrupt another row. The arrays are
  *  statics: zero-initialized by the C startup before main runs.
  */
@@ -14,7 +14,7 @@ static u8  APP_STORE_Au8Setting[APP_STORE_SETTING_COUNT];
 void APP_STORE_enumInit(void)
 {
     /* Factory defaults. Snake's compile-time default is NORMAL
-     * (SNAKE_CFG_DIFFICULTY == 1) — the seed keeps the runtime
+     * (SNAKE_CFG_DIFFICULTY == 1) â€” the seed keeps the runtime
      * default identical to the proven build. Flash will later
      * overwrite these seeds with saved values, in this function.  */
     APP_STORE_Au8Setting[APP_STORE_SETTING_SNAKE_LEVEL] = 1u;   /* NORMAL */

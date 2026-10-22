@@ -1,5 +1,5 @@
 /*
- * MM_renderer.c — implementation of the Memory Match TFT contract.
+ * MM_renderer.c â€” implementation of the Memory Match TFT contract.
  *  LOCATION: APP/ (flat).
  *
  *  HTFT surface used (complete list): FillRect, DrawRect, DrawChar2x,
@@ -9,10 +9,10 @@
  *
  *  Cursor ring erase = repaint the card, then redraw nothing: the
  *  ring occupies only the 2-px gaps, so erasing means repainting the
- *  card UNDER it in its current state — the caller supplies that
+ *  card UNDER it in its current state â€” the caller supplies that
  *  state via PaintCard before PaintCursor(...,0) is called.
  *  Implementation below erases with four bg strips (never touching
- *  the card), so the caller does NOT need to repaint the card —
+ *  the card), so the caller does NOT need to repaint the card â€”
  *  same as the keypad cursor. The card itself is never touched.
  */
 
@@ -20,7 +20,7 @@
 #include "APP/MM_renderer.h"
 #include "APP/MM_config.h"
 
-/* local aliases — config is the single source of truth */
+/* local aliases â€” config is the single source of truth */
 #define MM_COLOR_BG             MM_CFG_COLOR_BG
 #define MM_COLOR_CARD_DOWN      MM_CFG_COLOR_CARD_DOWN
 #define MM_COLOR_CARD_DOWN_BRD  MM_CFG_COLOR_CARD_DOWN_BRD
@@ -82,7 +82,7 @@ void MM_voidPaintCard(u8 Copy_u8CardIdx, MM_CardState_t Copy_eState, char Copy_c
     case MM_CARD_UP:
         HTFT_voidFillRect(Local_u16X, Local_u16Y, MM_CARD_PX, MM_CARD_PX, MM_COLOR_CARD_UP);
         HTFT_voidDrawRect(Local_u16X, Local_u16Y, MM_CARD_PX, MM_CARD_PX, MM_COLOR_CARD_UP_BRD);
-        /* 2x glyph (16x16) centered in the 24x24 card — glyph bg
+        /* 2x glyph (16x16) centered in the 24x24 card â€” glyph bg
          * matches the card fill so the cell doesn't punch a hole    */
         HTFT_voidDrawChar2x((u16)(Local_u16X + 4u), (u16)(Local_u16Y + 4u),
                             (u8)Copy_chSym, MM_COLOR_SYMBOL, MM_COLOR_CARD_UP);
@@ -112,14 +112,14 @@ void MM_voidPaintCursor(u8 Copy_u8CardIdx, u8 Copy_u8Visible)
 
     if (Copy_u8Visible != 0u)
     {
-        /* 1-px yellow ring, 1 px outside the card — lives in the
+        /* 1-px yellow ring, 1 px outside the card â€” lives in the
          * 2-px gaps between cards                                     */
         HTFT_voidDrawRect((u16)(Local_u16X - 1u), (u16)(Local_u16Y - 1u),
                           26u, 26u, MM_COLOR_CURSOR);
     }
     else
     {
-        /* erase the ring with four strips — the card itself is never
+        /* erase the ring with four strips â€” the card itself is never
          * touched (its fill/border survive)                           */
         HTFT_voidFillRect((u16)(Local_u16X - 1u), (u16)(Local_u16Y - 1u), 26u, 1u, MM_COLOR_BG);
         HTFT_voidFillRect((u16)(Local_u16X - 1u), (u16)(Local_u16Y + MM_CARD_PX), 26u, 1u, MM_COLOR_BG);
@@ -130,7 +130,7 @@ void MM_voidPaintCursor(u8 Copy_u8CardIdx, u8 Copy_u8Visible)
 
 void MM_voidPaintPairs(u8 Copy_u8Pairs)
 {
-	/* FIX: was "PAIRS:0/8" (9 cells) — overlapped TRIES at x=64 by one
+	/* FIX: was "PAIRS:0/8" (9 cells) â€” overlapped TRIES at x=64 by one
 	       cell; 17 cells cannot pack into 16. "PAIR:0/8" = 8 cells.       */
 	char Local_ch[9] = "PAIR:0/8";
 	Local_ch[5] = (char)('0' + (Copy_u8Pairs % 10u));   /* index 6 -> 5 */
@@ -148,7 +148,7 @@ void MM_voidPaintTries(u16 Copy_u16Tries)
 
 void MM_voidPaintMessage(const char *Copy_chText, u16 Copy_u16Color)
 {
-    /* 16-char padded opaque overwrite — ghosting impossible          */
+    /* 16-char padded opaque overwrite â€” ghosting impossible          */
     char Local_chLine[17];
     u8 Local_u8I;
 

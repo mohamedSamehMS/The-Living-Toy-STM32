@@ -5,10 +5,10 @@
  *  include ONLY this file (never MRCC_private.h).
  *
  *  Exposes:
- *    1. The driver status type     — the uniform convention for all MCAL
- *    2. The published clock model  — compile-time kHz constants computed
+ *    1. The driver status type     â€” the uniform convention for all MCAL
+ *    2. The published clock model  â€” compile-time kHz constants computed
  *                                    by MRCC_config.h's derived section
- *    3. The flat peripheral enum   — bus is resolved INSIDE the driver
+ *    3. The flat peripheral enum   â€” bus is resolved INSIDE the driver
  *    4. The API
  *
  *  Reference: RM0368 (STM32F401xB/xC Reference Manual), Chapter 7: RCC
@@ -40,7 +40,7 @@ typedef enum
 } MRCC_ReturnType_t;
 
 /* =====================================================================
- *  2. Published clock model — compile-time constants, in kHz
+ *  2. Published clock model â€” compile-time constants, in kHz
  *
  *  Single source of truth for every driver that needs a clock number:
  *    - MTIMER (Phase 1) : tick / PWM math from MRCC_APB1_TIMER_CLK_KHZ
@@ -61,16 +61,16 @@ typedef enum
 /*  MRCC_APB2_TIMER_CLK_KHZ   TIM1, TIM9..TIM11 timer clock            */
 
 /* =====================================================================
- *  3. Peripheral identifiers — ONE flat enum for the STM32F401CCU6
+ *  3. Peripheral identifiers â€” ONE flat enum for the STM32F401CCU6
  *
  *  Each value names exactly one clock-enable bit on exactly one bus
- *  (RM0368 §7.3.10–§7.3.15). The bus is resolved INTERNALLY by the
- *  driver, so a caller can no longer mismatch peripheral and bus —
+ *  (RM0368 Â§7.3.10â€“Â§7.3.15). The bus is resolved INTERNALLY by the
+ *  driver, so a caller can no longer mismatch peripheral and bus â€”
  *  the old two-argument API allowed e.g. (AHB1, APB2_SPI1_Enable),
  *  which silently enabled CRC (bit 12 of AHB1ENR) instead of SPI1.
  *
  *  Per entry: name, bus, ENR bit position.
- *  Note: RTC has no clock-enable bit — it lives in the backup domain
+ *  Note: RTC has no clock-enable bit â€” it lives in the backup domain
  *  (BDCR) and is configured through PWR + BDCR by the Phase-1 RTC
  *  driver, which will need MRCC_PWR (see APB1 section below).
  * ===================================================================== */
@@ -83,18 +83,18 @@ typedef enum
     MRCC_GPIOD,         /* Bit 3  : GPIO port D                                  */
     MRCC_GPIOE,         /* Bit 4  : GPIO port E                                  */
     MRCC_GPIOH,         /* Bit 7  : GPIO port H                                  */
-    MRCC_CRC,           /* Bit 12 : CRC calculation unit (Phase 1 — FOTA)        */
-    MRCC_BKPSRAM,       /* Bit 18 : 4 KB backup SRAM (needs VBAT supply —
+    MRCC_CRC,           /* Bit 12 : CRC calculation unit (Phase 1 â€” FOTA)        */
+    MRCC_BKPSRAM,       /* Bit 18 : 4 KB backup SRAM (needs VBAT supply â€”
                                interesting with a coin cell for RTC/parental
                                settings persistence)                            */
-    MRCC_DMA1,          /* Bit 21 : DMA1 (Phase 1 — audio / TFT transfers)      */
-    MRCC_DMA2,          /* Bit 22 : DMA2 (Phase 1 — audio / TFT transfers)      */
+    MRCC_DMA1,          /* Bit 21 : DMA1 (Phase 1 â€” audio / TFT transfers)      */
+    MRCC_DMA2,          /* Bit 22 : DMA2 (Phase 1 â€” audio / TFT transfers)      */
 
     /* ---------- AHB2 bus (AHB2ENR) ---------- */
-    MRCC_OTG_FS,        /* Bit 7  : USB OTG full-speed (Phase 2 — CDC / MSC)    */
+    MRCC_OTG_FS,        /* Bit 7  : USB OTG full-speed (Phase 2 â€” CDC / MSC)    */
 
     /* ---------- APB1 bus (APB1ENR) ---------- */
-    MRCC_TIM2,          /* Bit 0  : Timer 2 (32-bit) — Phase 1                  */
+    MRCC_TIM2,          /* Bit 0  : Timer 2 (32-bit) â€” Phase 1                  */
     MRCC_TIM3,          /* Bit 1  : Timer 3                                     */
     MRCC_TIM4,          /* Bit 2  : Timer 4                                     */
     MRCC_TIM5,          /* Bit 3  : Timer 5 (32-bit)                            */
@@ -105,12 +105,12 @@ typedef enum
     MRCC_I2C1,          /* Bit 21 : I2C 1                                       */
     MRCC_I2C2,          /* Bit 22 : I2C 2                                       */
     MRCC_I2C3,          /* Bit 23 : I2C 3                                       */
-    MRCC_PWR,           /* Bit 28 : Power interface — REQUIRED for backup-domain
+    MRCC_PWR,           /* Bit 28 : Power interface â€” REQUIRED for backup-domain
                                access (RTC, BKPSRAM); the Phase-1 RTC driver
                                enables this before touching BDCR               */
 
     /* ---------- APB2 bus (APB2ENR) ---------- */
-    MRCC_TIM1,          /* Bit 0  : Timer 1 (advanced) — Phase 1                */
+    MRCC_TIM1,          /* Bit 0  : Timer 1 (advanced) â€” Phase 1                */
     MRCC_USART1,        /* Bit 4  : USART 1 (ESP8266 link)                      */
     MRCC_USART6,        /* Bit 5  : USART 6                                     */
     MRCC_ADC1,          /* Bit 8  : ADC 1                                       */

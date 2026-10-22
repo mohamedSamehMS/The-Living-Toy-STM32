@@ -1,12 +1,12 @@
 /*
- * HUB_config.h — the hub's tunables. Same three-zone shape as every
+ * HUB_config.h â€” the hub's tunables. Same three-zone shape as every
  *  game config, so the whole APP layer greps the same way.
  *  LOCATION: APP/ (flat).
  *
- *  ZONE 1 — navigation pacing
- *  ZONE 2 — palette (all menu colors; one place to restyle the hub)
- *  ZONE 3 — features
- *  Geometry is NOT here — it lives in HUB_renderer.h as frozen
+ *  ZONE 1 â€” navigation pacing
+ *  ZONE 2 â€” palette (all menu colors; one place to restyle the hub)
+ *  ZONE 3 â€” features
+ *  Geometry is NOT here â€” it lives in HUB_renderer.h as frozen
  *  contract facts, exactly like every game's renderer header.
  */
 #ifndef HUB_CONFIG_H_
@@ -17,7 +17,7 @@
 /* ===================== 1. NAVIGATION ===================== */
 
 /* Kiosk auto-cycle: 0 = off. N = after N ms with NO input, the
- * cursor advances one row (attract mode — the expo demo behavior).
+ * cursor advances one row (attract mode â€” the expo demo behavior).
  * Wraps around the list. Set to taste at flash time; the engine
  * checks it every loop pass, cost-free when 0.                     */
 #define HUB_CFG_KIOSK_CYCLE_MS       0u

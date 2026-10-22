@@ -1,16 +1,16 @@
 /*
  * MNVIC_private.h
  *
- *  PRIVATE header of the MNVIC driver — never include from HAL or
+ *  PRIVATE header of the MNVIC driver â€” never include from HAL or
  *  Application code. Hardware facts only: base addresses, the register
  *  map (offsets verified), AIRCR definitions, bit positions.
  *
  *  Reference: ARM PM0214 (Cortex-M4 Devices Generic User Guide)
- *             §4.3 (NVIC), §4.2 (SCB)
+ *             Â§4.3 (NVIC), Â§4.2 (SCB)
  *
  *  Revision history:
- *    Rev 1 — original (verified register map; bare AIRCR pointer)
- *    Rev 2 — AIRCR bit definitions; naming sweep (MNVIC_t ->
+ *    Rev 1 â€” original (verified register map; bare AIRCR pointer)
+ *    Rev 2 â€” AIRCR bit definitions; naming sweep (MNVIC_t ->
  *            MNVIC_Registers_t); SCB_AIRCR -> MNVIC_SCB_AIRCR
  *
  *  Created on: Aug 1, 2026
@@ -26,7 +26,7 @@
  *  Base addresses
  *
  *  The NVIC is a CORE peripheral (Cortex-M4 silicon, not ST), living
- *  in the PPB region — like SysTick, it needs no RCC clock enable.
+ *  in the PPB region â€” like SysTick, it needs no RCC clock enable.
  *
  *  The whole region used by this driver:
  *      NVIC registers : 0xE000E100 .. 0xE000E4FF
@@ -37,7 +37,7 @@
 #define MNVIC_BASE_ADDRESS              (0xE000E100UL)
 
 /* =====================================================================
- *  NVIC register map (PM0214 §4.3 — offsets verified)
+ *  NVIC register map (PM0214 Â§4.3 â€” offsets verified)
  *
  *  The struct covers the full 240-IRQ NVIC architecture (F401 uses
  *  only IRQs 0..84; the rest of the arrays exists but is
@@ -48,16 +48,16 @@
  *                            matters: write only the bit(s) to change.
  *      ISPR : write-1-to-SET   pending
  *      ICPR : write-1-to-CLEAR pending
- *      IABR : READ-ONLY — 1 while the IRQ is actively executing
+ *      IABR : READ-ONLY â€” 1 while the IRQ is actively executing
  *                            (set on entry, cleared on exit)
  *      IPR  : 8-bit priority per IRQ, only bits [7:4] implemented
  *                            on the F401 ([3:0] read 0, writes ignored)
- *      STIR : software interrupt trigger — writing an IRQ number
+ *      STIR : software interrupt trigger â€” writing an IRQ number
  *                            sets that IRQ pending (see TriggerIRQ)
  *
  *  W1S/W1C discipline: because writes only affect bits written as 1,
  *  the idiom for all of ISER/ICER/ISPR/ICPR is the DIRECT store of
- *  (1 << bit) — one transaction, no read-modify-write. RMW on these
+ *  (1 << bit) â€” one transaction, no read-modify-write. RMW on these
  *  registers works (they are readable) but implies register state
  *  that is simply not needed and is not the architectural pattern.
  * ===================================================================== */
@@ -82,7 +82,7 @@ typedef struct
 #define MNVIC                           ((volatile MNVIC_Registers_t *) MNVIC_BASE_ADDRESS)
 
 /* =====================================================================
- *  SCB AIRCR — Application Interrupt and Reset Control Register
+ *  SCB AIRCR â€” Application Interrupt and Reset Control Register
  *
  *  This driver touches AIRCR for exactly ONE field: PRIGROUP
  *  (bits 10:8), written once by MNVIC_Init from the config value.
@@ -90,16 +90,16 @@ typedef struct
  *  THE WRITE-KEY TRAP (why this register gets special treatment):
  *  every write must carry 0x05FA in bits 31:16 or the ENTIRE write
  *  is silently ignored. But on READ those bits return VECTKEYSTAT
- *  = 0xFA05 — NOT the write key. A naive read-modify-write would
+ *  = 0xFA05 â€” NOT the write key. A naive read-modify-write would
  *  write 0xFA05 back as the "key", the write would be silently
  *  dropped, and the grouping would never change. The correct
  *  pattern (mask low 16 bits, then OR in the real key) is used and
  *  documented in MNVIC_Init.
  *
- *  RMW safety of the low half: the preserved bits read as —
+ *  RMW safety of the low half: the preserved bits read as â€”
  *  ENDIANNESS (bit 15) = 0 on STM32 (little-endian), VECTRESET,
  *  VECTCLRACTIVE, SYSRESETREQ (bits 0..2) all read 0 on a healthy
- *  part — so nothing dangerous is ever written back. A read-back of
+ *  part â€” so nothing dangerous is ever written back. A read-back of
  *  PRIGROUP after the write converts "write silently ignored" into
  *  a returned MNVIC_INIT_FAILED.
  * ===================================================================== */
@@ -125,18 +125,18 @@ typedef struct
 
 
 /* =====================================================================
- *  SCB VTOR — vector table offset register (Rev 3, FOTA)
+ *  SCB VTOR â€” vector table offset register (Rev 3, FOTA)
  *
  *  VTOR tells the core where the vector table lives once code runs
  *  from a base other than 0x08000000. Bits [31:7] are implemented:
  *  the base must be at least 128-byte aligned (ARMv7-M floor). The
- *  FOTA layout's regions are 16 KB aligned — far above it.
+ *  FOTA layout's regions are 16 KB aligned â€” far above it.
  * ===================================================================== */
 #define MNVIC_SCB_VTOR_ADDRESS          (0xE000ED08UL)
 #define MNVIC_SCB_VTOR                  (*(volatile u32 *) MNVIC_SCB_VTOR_ADDRESS)
 #define MNVIC_VTOR_ALIGNMENT_MASK       (0x7Fu)
 
-/* AIRCR reset-control bits (Rev 3) — only SYSRESETREQ is used;
+/* AIRCR reset-control bits (Rev 3) â€” only SYSRESETREQ is used;
    VECTRESET/VECTCLRACTIVE are DEBUG-ONLY (ARM reserves VECTRESET). */
 #define MNVIC_AIRCR_VECTRESET           0
 #define MNVIC_AIRCR_VECTCLRACTIVE       1

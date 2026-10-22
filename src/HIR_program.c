@@ -1,5 +1,5 @@
 /*
- * HIR_program.c — IR receiver driver (NEC link layer), IMPLEMENTATION
+ * HIR_program.c â€” IR receiver driver (NEC link layer), IMPLEMENTATION
  *                  TIM5 INPUT-CAPTURE EDITION (the Phase-2 engine swap)
  *
  *  Layer: HAL (link layer) -> MCAL (MGPIO, MTIM). Consumed by HNEC_REMOTE.
@@ -18,8 +18,8 @@
  *   4. THE WINDOW = (u32)(completion - lastDelivered) < quietUs. The
  *      library's wrap-safe subtraction idiom; the anchor refreshes at
  *      every delivery. Swallowed frames are consumed silently (no
- *      CloseFrame owed) — the window persists until a frame passes it.
- *   5. STRUCTURAL NOISE DISCARDS SILENTLY (deliberate divergence — see
+ *      CloseFrame owed) â€” the window persists until a frame passes it.
+ *   5. STRUCTURAL NOISE DISCARDS SILENTLY (deliberate divergence â€” see
  *      the delivery notes); CHECKSUM FAILURES still latch INVALID and
  *      receive their window through HNEC's normal path.
  *   6. ENABLE/DISABLE = capture arm/disarm. The disarm-before-reset
@@ -38,9 +38,9 @@
 #include "HAL/IR/HIR_interface.h"
 #include "HAL/IR/HIR_private.h"
 
-/* The AF2 fact is PA0-specific — pin this pairing (Constitution rule) */
+/* The AF2 fact is PA0-specific â€” pin this pairing (Constitution rule) */
 _Static_assert((HIR_PORT == MGPIO_PORTA) && (HIR_PIN == MGPIO_PIN_0),
-               "HIR: PA0-specific AF — re-derive HIR_PIN_AF if the pin moves");
+               "HIR: PA0-specific AF - re-derive HIR_PIN_AF if the pin moves");
 
 /* ===================== module state (thread-side) ===================== */
 
@@ -49,7 +49,7 @@ static u8 Global_u8Enabled     = 0u;
 static u8 Global_u8DecodeOpen  = 0u;
 
 /* Raw-frame debug slot (thread-only: DecodeFrame writes, GetLastRawFrame
- * reads — no concurrency, same as before the swap). */
+ * reads â€” no concurrency, same as before the swap). */
 static u8 Global_u8LastAddr = 0u;
 static u8 Global_u8LastCmd  = 0u;
 static u8 Global_u8RawFresh = 0u;
@@ -69,7 +69,7 @@ static volatile u8  HIR_privateSlotCmd  = 0u;
 static volatile u32 HIR_privateSlotCompletion = 0u;       /* TIM5 us */
 
 /* ====== the decode state machine (TIM5 ISR context only; the Disable
- *         path resets it AFTER disarming capture — the barrier) ====== */
+ *         path resets it AFTER disarming capture â€” the barrier) ====== */
 
 static HIR_SmState_t    HIR_privateSmState = HIR_SM_IDLE;
 static u32              HIR_privateLastEdgeTs = 0u;
@@ -153,7 +153,7 @@ static void HIR_privateRisingEdgeCb(u32 Copy_u32Timestamp)
 
         case HIR_SM_STOP:
         {
-            /* the trailing burst ended — FRAME COMPLETE */
+            /* the trailing burst ended â€” FRAME COMPLETE */
             HIR_privateLatchFrame(Copy_u32Timestamp);
             HIR_privateSmState = HIR_SM_IDLE;
             break;
@@ -163,7 +163,7 @@ static void HIR_privateRisingEdgeCb(u32 Copy_u32Timestamp)
         default:    /* HDR_SPACE / BIT_SPACE expect FALLING here */
         {
             /* Stray rising (e.g. the trailing burst of a frame whose
-             * decode was discarded): carries no frame information — a
+             * decode was discarded): carries no frame information â€” a
              * header always starts with a FALLING edge. Ignore. */
             break;
         }
@@ -230,7 +230,7 @@ static void HIR_privateFallingEdgeCb(u32 Copy_u32Timestamp)
                         ((HIR_privateFrameBytes[2] ^ HIR_privateFrameBytes[3]) != 0xFFu))
                     {
                         /* Structurally complete, checksum-corrupt: report
-                         * it — noise gets a window (the old contract). */
+                         * it â€” noise gets a window (the old contract). */
                         HIR_privateFrameType = HIR_FRAME_INVALID;
                         HIR_privateLatchFrame(Copy_u32Timestamp);
                         HIR_privateSmState = HIR_SM_IDLE;
@@ -252,11 +252,11 @@ static void HIR_privateFallingEdgeCb(u32 Copy_u32Timestamp)
         default:    /* HDR_LOW / BIT_LOW / STOP expect RISING here */
         {
             /* IDLE: a candidate AGC start. The other states: a missed
-             * rising edge (overcapture — impossible at NEC rates) or a
+             * rising edge (overcapture â€” impossible at NEC rates) or a
              * machine parked since a dead frame. Re-treat THIS edge as a
              * candidate header start: the machine self-heals instead of
              * eating the next real frame. (A frame unlatched in STOP is
-             * lost in the missed-edge case — bounded, documented.) */
+             * lost in the missed-edge case â€” bounded, documented.) */
             HIR_privateSmState = HIR_SM_HDR_LOW;
             break;
         }
@@ -271,7 +271,7 @@ HIR_EnumStatus_t HIR_enumInit(void)
 {
     u32 Local_u32Now;
 
-    /* Pin: alternate function, TIM5_CH1. MEXTI wiring is GONE — TIM5
+    /* Pin: alternate function, TIM5_CH1. MEXTI wiring is GONE â€” TIM5
      * captures the pin directly. The pull stays: PUPDR applies in AF
      * mode; an unwired line rests idle-high (no ghost edges). */
     if (MGPIO_SetPinMode(HIR_PORT, HIR_PIN, MGPIO_MODE_ALT_FUNC) != MGPIO_OK)
@@ -294,7 +294,7 @@ HIR_EnumStatus_t HIR_enumInit(void)
     (void)MTIM_CaptureStop(HIR_TIM, MTIM_CH2);
     HIR_privateResetMachine();
 
-    /* Anchor the window to the current counter — kills the phantom
+    /* Anchor the window to the current counter â€” kills the phantom
      * window-from-zero boot corner (a first press 35.8-71.6 min after
      * boot would otherwise be swallowed by a stale zero deadline). */
     if (MTIM_GetCounter(HIR_TIM, &Local_u32Now) != MTIM_OK)
@@ -348,7 +348,7 @@ HIR_EnumStatus_t HIR_enumDisable(void)
     if (Global_u8Initialized == 0u) { return HIR_NOK; }
 
     /* Disarm BOTH channels first: after these return, no capture ISR can
-     * run — the barrier that makes the resets below race-free. A frame
+     * run â€” the barrier that makes the resets below race-free. A frame
      * in flight at the boundary is discarded by design. The COUNTER KEEPS
      * RUNNING (timestamps must stay continuous). */
     (void)MTIM_CaptureStop(HIR_TIM, MTIM_CH1);
@@ -391,7 +391,7 @@ HIR_EnumStatus_t HIR_enumDecodeFrame(HIR_Frame_t *Copy_pstFrame)
         Local_u8Seq2 = HIR_privateSlotSeq;
     } while (Local_u8Seq1 != Local_u8Seq2);
 
-    /* Nothing new since the last consume — the idle path (still ~sub-us:
+    /* Nothing new since the last consume â€” the idle path (still ~sub-us:
      * a handful of volatile reads). */
     if (Local_u8Seq2 == HIR_privateConsumedSeq)
     {
@@ -405,7 +405,7 @@ HIR_EnumStatus_t HIR_enumDecodeFrame(HIR_Frame_t *Copy_pstFrame)
      * translated to TIM5-timestamp arithmetic: the anchor refreshes at
      * every delivery, the subtraction is wrap-safe by construction, and
      * waiting out the window now costs ZERO thread time. Swallowed frames
-     * are consumed WITHOUT a CloseFrame owed — the window persists (still
+     * are consumed WITHOUT a CloseFrame owed â€” the window persists (still
      * anchored to the old frame) until one passes it. */
     if ((u32)(Local_u32Completion - HIR_privateLastCompletion)
         < HIR_privateQuietWindowUs)
@@ -419,7 +419,7 @@ HIR_EnumStatus_t HIR_enumDecodeFrame(HIR_Frame_t *Copy_pstFrame)
 
     if (Local_Type == HIR_FRAME_DATA)
     {
-        Global_u8LastAddr = Local_u8Addr;    /* raw debug slot — thread-only */
+        Global_u8LastAddr = Local_u8Addr;    /* raw debug slot â€” thread-only */
         Global_u8LastCmd  = Local_u8Cmd;
         Global_u8RawFresh = 1u;
     }
@@ -433,13 +433,13 @@ HIR_EnumStatus_t HIR_enumCloseFrame(u32 Copy_u32QuietMs)
 {
     if (Global_u8Initialized == 0u) { return HIR_NOK; }
 
-    /* Nothing owed (or a stray double-close): state untouched — a
+    /* Nothing owed (or a stray double-close): state untouched â€” a
      * spurious window would silently eat a pending frame. */
     if (Global_u8DecodeOpen == 0u)  { return HIR_NOK; }
 
     Global_u8DecodeOpen = 0u;
 
-    /* THE WINDOW — a deadline, not a wait. The duration stays the
+    /* THE WINDOW â€” a deadline, not a wait. The duration stays the
      * CONSUMER's policy (HNEC chooses 200/0 exactly as before); HIR only
      * owns the mechanism, which no longer blocks anyone. */
     HIR_privateQuietWindowUs = Copy_u32QuietMs * 1000u;

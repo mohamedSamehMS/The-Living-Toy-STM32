@@ -1,14 +1,14 @@
 /*
- * APP_FOTA_NET.c — the FOTA orchestrator (FOTA seat, v1.2 — the
+ * APP_FOTA_NET.c â€” the FOTA orchestrator (FOTA seat, v1.2 â€” the
  *                  consent-model deltas; see the header).
  *
  *  Revision history:
- *    v1.2 — the compare; POLICY 1 gating BOTH modes; the NOTIFIED
+ *    v1.2 â€” the compare; POLICY 1 gating BOTH modes; the NOTIFIED
  *           re-accept (the refresh); the WATCHDOG resume shape.
- *    v1.0 — first delivery.
- *    R5   — + the stuck-stage flag (the ESP-side STAGE_CRC_FAIL
+ *    v1.0 â€” first delivery.
+ *    R5   â€” + the stuck-stage flag (the ESP-side STAGE_CRC_FAIL
  *           condition, surfaced for the module's CH:RETRY recovery);
- *           the FA fix (the duplicated enumPrepare conditional —
+ *           the FA fix (the duplicated enumPrepare conditional â€”
  *           the FOTA seat's finding, this milestone's commit point).
  */
 
@@ -41,10 +41,10 @@ static u32 Global_u32BusySinceMs;
 static APP_FOTA_Status_t Global_EnumLastStatus = FOTA_STATUS_IDLE;
 static APP_FOTA_NET_Notify_t Global_pfNotify = 0;
 
-/* R5: the stuck-stage flag — 1 = the LAST ladder failure was
+/* R5: the stuck-stage flag â€” 1 = the LAST ladder failure was
  * STAGE_CRC_FAIL (the ESP-side staged fetch is bad; the recorded
  * remedy is FRESET + re-BEGIN, human-gated). Set in the RESP_ERR
- * error branch AFTER ToIdle (which clears it — the ordering is
+ * error branch AFTER ToIdle (which clears it â€” the ordering is
  * load-bearing); cleared on every ladder reset. */
 static u8 Global_u8StageCrcStuck = 0u;
 
@@ -61,7 +61,7 @@ static void ORCH_privateCopyBounded(char *Copy_pchDst, u8 Copy_u8Size, const cha
 }
 
 /* =====================================================================
- *  THE VERSION COMPARE (FOTA-49 delta 1) — numeric per component,
+ *  THE VERSION COMPARE (FOTA-49 delta 1) â€” numeric per component,
  *  missing = 0. The lexical trap closed.
  * ===================================================================== */
 u8 APP_FOTA_NET_u8VersionNewer(const char *Copy_pchNew,
@@ -139,10 +139,10 @@ static void ORCH_privateToIdle(void)
 {
     Global_u8Armed = 0u;
     Global_EnumState = APP_FOTA_NET_STATE_IDLE;
-    /* R5-FIX: the stuck flag is NOT cleared here — ToIdle runs INSIDE
+    /* R5-FIX: the stuck flag is NOT cleared here â€” ToIdle runs INSIDE
        the very branch that sets it (set-after-call was a fragile
        ordering). The flag's lifetime is now: set at the RESP_ERR
-       failure, cleared only when the NEXT attempt begins (Accept) —
+       failure, cleared only when the NEXT attempt begins (Accept) â€”
        the module can sample it any time in between. */
 }
 
@@ -151,7 +151,7 @@ static void ORCH_privateAccept(void)
 {
     u32 Local_u32Frames;
 
-    /* R5-FIX: a new attempt begins — the previous failure's stuck
+    /* R5-FIX: a new attempt begins â€” the previous failure's stuck
        condition expires here (and only here) */
     Global_u8StageCrcStuck = 0u;
 
@@ -169,9 +169,9 @@ static void ORCH_privateAccept(void)
         return;
     }
 
-    /* FA FIX (the FOTA seat's finding, applied at this milestone — the
+    /* FA FIX (the FOTA seat's finding, applied at this milestone â€” the
        confirmed commit point: the first build linking this file). The
-       duplicated conditional is GONE — one enumPrepare call, one check. */
+       duplicated conditional is GONE â€” one enumPrepare call, one check. */
     if (APP_FOTA_enumPrepare() != FOTA_STATUS_IDLE)
     {
         APP_FOTA_UI_Error("ERASE FAIL");
@@ -235,7 +235,7 @@ APP_FOTA_NET_State_t APP_FOTA_NET_enumGetState(void)
     return Global_EnumState;
 }
 
-/* R5: the stuck-stage truth — the module's CH:RETRY affordance reads it */
+/* R5: the stuck-stage truth â€” the module's CH:RETRY affordance reads it */
 u8 APP_FOTA_NET_u8StageCrcStuck(void)
 {
     return Global_u8StageCrcStuck;
@@ -259,7 +259,7 @@ void APP_FOTA_NET_voidOnEvent(const NET_Event_t *Copy_pstEvent)
                 if (APP_FOTA_NET_u8VersionNewer(Copy_pstEvent->Fota.Version,
                                                 Global_achThisVersion) == 0u)
                 {
-                    break;              /* suppressed — the anti-reinstall lock */
+                    break;              /* suppressed â€” the anti-reinstall lock */
                 }
 
                 ORCH_privateCopyBounded(Global_achNewVersion, sizeof(Global_achNewVersion),
@@ -328,7 +328,7 @@ void APP_FOTA_NET_voidOnEvent(const NET_Event_t *Copy_pstEvent)
                 {
                     APP_FOTA_UI_Error(Copy_pstEvent->Reason);
                     ORCH_privateToIdle();
-                    /* R5: set AFTER ToIdle — ToIdle no longer clears it
+                    /* R5: set AFTER ToIdle â€” ToIdle no longer clears it
                        (the flag lives until the NEXT attempt's Accept),
                        but the after-position is kept as belt-and-braces */
                     Global_u8StageCrcStuck =

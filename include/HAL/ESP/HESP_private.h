@@ -1,8 +1,8 @@
 /*
- * HESP_private.h — internal definitions. Included ONLY by
+ * HESP_private.h â€” internal definitions. Included ONLY by
  * HESP_program.c. No hardware registers here: HESP owns none (pure
- * consumer of MUSART). This file carries the invariant set — the
- * load-bearing rules of the adopted code — as the review surface.
+ * consumer of MUSART). This file carries the invariant set â€” the
+ * load-bearing rules of the adopted code â€” as the review surface.
  */
 
 #ifndef HESP_PRIVATE_H_
@@ -11,7 +11,7 @@
 #include "STD_TYPES.h"
 
 /* =====================================================================
- *  THE SEVEN INVARIANTS (from the validated link bench — keep with
+ *  THE SEVEN INVARIANTS (from the validated link bench â€” keep with
  *  the code they govern; removal is a review-flagged change)
  *
  *  1. SPSC: HespHead written ONLY in ISR context, HespTail ONLY in
@@ -26,11 +26,11 @@
  *  4. Ring size power of 2 (mask arithmetic).
  *  5. The line handler runs in LOOP context, once per complete line,
  *     NUL-terminated, length excluding the terminator. Consume/copy
- *     within the handler — HespLine is overwritten by the next line.
+ *     within the handler â€” HespLine is overwritten by the next line.
  *  6. Junk policy in ONE place: empty lines skipped; over-length
  *     (buffer cap 192 or content > 158) counted and discarded; both
  *     announce via the junk handler (Patch 0).
- *  7. '\n' is THE frame boundary — NOT the IDLE event. IDLE ticks
+ *  7. '\n' is THE frame boundary â€” NOT the IDLE event. IDLE ticks
  *     are the stuck-line diagnostic only.
  *
  *  TX invariants (1-6 of deliverable 3): thread-context only; NO
@@ -39,7 +39,7 @@
  *  budget; misuse guards mirror the receiver's type rule.
  * ===================================================================== */
 
-/* internal prototypes (static — program.c only) */
+/* internal prototypes (static â€” program.c only) */
 static void HESP_RxByteCallback(u8 Copy_u8Byte);
 static void HESP_IdleCallback(void);
 static u8   HESP_Assemble(u8 Copy_u8Byte);

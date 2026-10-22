@@ -1,10 +1,10 @@
 /*
  * MGPIO_private.h
  *
- *  PRIVATE header of the MGPIO driver — never include this from HAL or
+ *  PRIVATE header of the MGPIO driver â€” never include this from HAL or
  *  Application code. Contains ONLY hardware facts:
  *      - GPIO port base addresses
- *      - the per-port register map (offsets verified vs RM0368 §8.4)
+ *      - the per-port register map (offsets verified vs RM0368 Â§8.4)
  *      - per-pin field masks and BSRR bit encoders
  *
  *  All user-tunable options (per-package valid-pin masks, driver
@@ -12,9 +12,9 @@
  *  in MGPIO_interface.h.
  *
  *  Reference: RM0368 (STM32F401xB/xC Reference Manual), Ch. 8: GPIO
- *             STM32F401xC datasheet — pin availability per package
+ *             STM32F401xC datasheet â€” pin availability per package
  *
- *  NOTE — replaces GPIO_private.h (renamed for the MGPIO_ prefix
+ *  NOTE â€” replaces GPIO_private.h (renamed for the MGPIO_ prefix
  *  convention). Delete the old file from the tree.
  *
  *  Created on: Jul 24, 2026
@@ -27,7 +27,7 @@
 #include "STD_TYPES.h"
 
 /* =====================================================================
- *  GPIO port base addresses (RM0368 §2.3, memory map)
+ *  GPIO port base addresses (RM0368 Â§2.3, memory map)
  *
  *  All GPIO ports live on AHB1, spaced 0x400 apart. The F401 die has
  *  no GPIOF/GPIOG. GPIOD/E and GPIOH exist on larger packages:
@@ -45,20 +45,20 @@
 #define MGPIO_GPIOC_BASE_ADDRESS      (0x40020800UL)
 
 /* =====================================================================
- *  Per-port register map (RM0368 §8.4 — offsets verified)
+ *  Per-port register map (RM0368 Â§8.4 â€” offsets verified)
  *
- *  The GPIO register block is contiguous from 0x00 to 0x24 — unlike
+ *  The GPIO register block is contiguous from 0x00 to 0x24 â€” unlike
  *  RCC, no reserved gaps need declaring. Field meanings:
- *      MODER   : 2 bits per pin — 00 input, 01 output, 10 alternate
+ *      MODER   : 2 bits per pin â€” 00 input, 01 output, 10 alternate
  *                function, 11 analog
- *      OTYPER  : 1 bit  per pin — 0 push-pull, 1 open-drain
- *      OSPEEDR : 2 bits per pin — 00 low .. 11 very high
- *      PUPDR   : 2 bits per pin — 00 none, 01 up, 10 down, 11 reserved
+ *      OTYPER  : 1 bit  per pin â€” 0 push-pull, 1 open-drain
+ *      OSPEEDR : 2 bits per pin â€” 00 low .. 11 very high
+ *      PUPDR   : 2 bits per pin â€” 00 none, 01 up, 10 down, 11 reserved
  *      IDR     : read-only ACTUAL pin level (real pin state, even for
- *                output pins — useful to detect shorts/overload)
+ *                output pins â€” useful to detect shorts/overload)
  *      ODR     : output data latch. A full-word store is atomic; a
  *                per-bit read-modify-write is NOT (see BSRR below)
- *      BSRR    : atomic bit set/reset port — see BSRR section below
+ *      BSRR    : atomic bit set/reset port â€” see BSRR section below
  *      LCKR    : configuration lock (unused by this driver)
  *      AFRL/H  : 4 bits per pin alternate-function select, low/high
  *                half of the port
@@ -77,7 +77,7 @@ typedef struct
     volatile u32 AFRH;       /* 0x24 : Alternate function high (pins 8..15)       */
 } MGPIO_Registers_t;
 
-/* Register map access points — consumed by the port lookup table in
+/* Register map access points â€” consumed by the port lookup table in
    MGPIO_program.c. Prefixed: the old bare GPIOA/GPIOB/GPIOC macros
    were unprefixed global namespace hazards. */
 #define MGPIO_GPIOA   ((volatile MGPIO_Registers_t *) MGPIO_GPIOA_BASE_ADDRESS)
@@ -95,7 +95,7 @@ typedef struct
  *      MGPIO_SPEED_LOW .. VERY_HIGH                  -> OSPEEDR 00/01/10/11
  *      MGPIO_NO_PULL / PULL_UP / PULL_DOWN           -> PUPDR  00/01/10
  *  PUPDR encoding 11 is reserved in hardware and unreachable through
- *  the enum — the enum and the register can never disagree.
+ *  the enum â€” the enum and the register can never disagree.
  * ===================================================================== */
 
 /* =====================================================================
@@ -103,7 +103,7 @@ typedef struct
  *
  *  Every mask is u-suffixed and casts the pin to u32 BEFORE shifting.
  *  Why: for pin 15, the two-bit masks reach bit 31 and the AFRH mask
- *  reaches bit 31 — an int (the enum's underlying type) left-shifted
+ *  reaches bit 31 â€” an int (the enum's underlying type) left-shifted
  *  past its sign bit is undefined behavior in C. Unsigned shifts are
  *  always defined. This rule killed the old driver's signed-shift UB.
  *
@@ -119,16 +119,16 @@ typedef struct
 #define MGPIO_AFRH_MASK(pin)      (0xFu  << (((u32)(pin) - 8u) * 4u))   /* pins 8..15 */
 
 /* =====================================================================
- *  BSRR — atomic bit set / reset (RM0368 §8.4.7)
+ *  BSRR â€” atomic bit set / reset (RM0368 Â§8.4.7)
  *
- *  Writing 1 to BS(x) (bits 15:0)  sets   pin x — a single bus write.
- *  Writing 1 to BR(x) (bits 31:16) resets pin x — a single bus write.
+ *  Writing 1 to BS(x) (bits 15:0)  sets   pin x â€” a single bus write.
+ *  Writing 1 to BR(x) (bits 31:16) resets pin x â€” a single bus write.
  *  Writing 0 anywhere has NO effect on that pin.
  *  If BS(x) and BR(x) are both written 1 for the same pin, BR wins.
  *
  *  This is why MGPIO has no ODR read-modify-write API: SET_BIT/CLR_BIT
  *  on ODR is a lost-update race the moment any ISR writes the same
- *  port — which Project 4 WILL have (EXTI button handler touching LED
+ *  port â€” which Project 4 WILL have (EXTI button handler touching LED
  *  pins while the game loop writes TFT pins on the same port). BSRR
  *  does the same job in one atomic write.
  * ===================================================================== */
@@ -136,8 +136,8 @@ typedef struct
 #define MGPIO_BSRR_BR(pin)        (1u << ((u32)(pin) + 16u))
 
 /* LCKR (0x1C): LCK[15:0] lock a pin's configuration; LCKK (bit 16)
-   arms the lock through a specific read/write sequence (RM0368 §8.4.9)
-   — once armed, it only clears on a port reset. Unused by this driver;
+   arms the lock through a specific read/write sequence (RM0368 Â§8.4.9)
+   â€” once armed, it only clears on a port reset. Unused by this driver;
    defined here for documentation completeness. */
 #define MGPIO_LCKR_LCKK           16
 

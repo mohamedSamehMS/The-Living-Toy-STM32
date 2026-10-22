@@ -1,13 +1,13 @@
 /*
- * MATHQ_config.h — ALL user-tunable settings for Math Quiz.
+ * MATHQ_config.h â€” ALL user-tunable settings for Math Quiz.
  *  LOCATION: APP/ (flat).
  *
  *  Three zones, same order as every game's config:
- *    1. GAMEPLAY  — round structure, difficulty ramp, demo accuracy
- *    2. VISUAL    — palette + feedback timing
- *    3. FEATURES  — demo pacing
+ *    1. GAMEPLAY  â€” round structure, difficulty ramp, demo accuracy
+ *    2. VISUAL    â€” palette + feedback timing
+ *    3. FEATURES  â€” demo pacing
  *
- *  Geometry (keypad layout, panel box) lives in MATHQ_renderer.h —
+ *  Geometry (keypad layout, panel box) lives in MATHQ_renderer.h â€”
  *  contract facts, not tunables.
  */
 
@@ -32,7 +32,7 @@
 /* Streak bonus cap: points = 1 + min(streak-1, cap)                */
 #define MATHQ_CFG_STREAK_CAP            3u
 
-/* Demo autopilot accuracy, percent — exercises both feedback paths
+/* Demo autopilot accuracy, percent â€” exercises both feedback paths
  * and both terminal outcomes across rounds.                        */
 #define MATHQ_CFG_DEMO_ACCURACY_PCT     70u
 
@@ -61,11 +61,11 @@
 #define MATHQ_CFG_FEEDBACK_BAD_MS       1200u
 #define MATHQ_CFG_SHAKE_STEP_MS         100u    /* 3 shake steps, then reveal */
 
-/* THE §7 THREE-BEAT WRONG-ANSWER PACING (the pedagogy ruling — applied
+/* THE Â§7 THREE-BEAT WRONG-ANSWER PACING (the pedagogy ruling â€” applied
  * from day one of this module). Each wrong answer is three distinct
  * beats the child can process, not one abrupt flash:
- *   beat 1 (WRONG_MS)   : red answer + shake, "WRONG" — registers the miss
- *   beat 2 (REVEAL_MS)  : correct answer in green, "ANSWER: n" — the
+ *   beat 1 (WRONG_MS)   : red answer + shake, "WRONG" â€” registers the miss
+ *   beat 2 (REVEAL_MS)  : correct answer in green, "ANSWER: n" â€” the
  *                         teaching beat; the heart goes black here
  *   beat 3 (GAP_MS)     : quiet pause before the next question          */
 #define MATHQ_CFG_FEEDBACK_WRONG_MS     800u

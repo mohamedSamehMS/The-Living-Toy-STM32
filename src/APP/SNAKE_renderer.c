@@ -1,13 +1,13 @@
 /*
- * SNAKE_renderer.c — implementation of the frozen TFT contract v1.1.
+ * SNAKE_renderer.c â€” implementation of the frozen TFT contract v1.1.
  *
- *  LOCATION: APP/ (flat — no subfolders).
+ *  LOCATION: APP/ (flat â€” no subfolders).
  *
  *  HTFT surface used (complete list): FillRect, DrawImage, DrawString.
  *  Nothing here touches MCAL directly; nothing here knows the rules.
  *
  *  PALETTE: every color comes from APP/SNAKE_config.h (zone 2). This
- *  file defines NO colors of its own — tune visuals in the config.
+ *  file defines NO colors of its own â€” tune visuals in the config.
  *  The HEAD image below uses the config colors via the HH/EE macros.
  *
  *  Internal naming note: the renderer keeps its local SNAKE_COLOR_*
@@ -31,13 +31,13 @@
 #define SNAKE_COLOR_HUD_HI    SNAKE_CFG_COLOR_HUD_HI
 
 /* ------------------------------------------------------------------ *
- *  HEAD IMAGE — 7x7 RGB565, fixed eyes (row 1, cols 1 and 5).
- *  Reads like ASCII art in the source — any tweak is a bit you can
+ *  HEAD IMAGE â€” 7x7 RGB565, fixed eyes (row 1, cols 1 and 5).
+ *  Reads like ASCII art in the source â€” any tweak is a bit you can
  *  see. Painted via the public DrawImage: one window + one 49-pixel
  *  stream, identical cost to a plain fill.
  *
  *  Colors enter through the config aliases, so a palette edit in
- *  SNAKE_config.h changes the head too — one source of truth.
+ *  SNAKE_config.h changes the head too â€” one source of truth.
  * ------------------------------------------------------------------ */
 #define HH   SNAKE_COLOR_HEAD
 #define EE   HTFT_COLOR_BLACK             /* eyes: always black      */
@@ -70,7 +70,7 @@ static void SNAKE_privateCellToPixel(u8 Copy_u8Col, u8 Copy_u8Row,
  *  PUBLIC                                                             *
  * ------------------------------------------------------------------ */
 
-/* SNAKE_renderer.h — void SNAKE_voidPaintField(u8 Copy_u8BorderOn); */
+/* SNAKE_renderer.h â€” void SNAKE_voidPaintField(u8 Copy_u8BorderOn); */
 void SNAKE_voidPaintField(u8 Copy_u8BorderOn)
 {
     HTFT_voidFillScreen(SNAKE_COLOR_BG);
@@ -103,7 +103,7 @@ void SNAKE_voidPaintCell(u8 Copy_u8Col, u8 Copy_u8Row, SNAKE_CellRole_t Copy_eRo
         HTFT_voidFillRect(Local_u16Px, Local_u16Py, SNAKE_CELL_FILL, SNAKE_CELL_FILL, SNAKE_COLOR_BODY_B);
         break;
     case SNAKE_CELL_HEAD:
-        /* one window + one stream — same cost as a fill             */
+        /* one window + one stream â€” same cost as a fill             */
         HTFT_voidDrawImage(Local_u16Px, Local_u16Py, SNAKE_CELL_FILL, SNAKE_CELL_FILL, SNAKE_AU16Head);
         break;
     case SNAKE_CELL_FOOD:
@@ -120,7 +120,7 @@ void SNAKE_voidPaintCell(u8 Copy_u8Col, u8 Copy_u8Row, SNAKE_CellRole_t Copy_eRo
 void SNAKE_voidPaintScore(u16 Copy_u16Score)
 {
     /* "SCORE:000" = 9 cells = 72 px at x=0. Fixed width: every
-     * overwrite is a same-rect redraw — zero smearing.               */
+     * overwrite is a same-rect redraw â€” zero smearing.               */
     char Local_chScore[10] = "SCORE:000";
     Local_chScore[6] = (char)('0' + ((Copy_u16Score / 100u) % 10u));
     Local_chScore[7] = (char)('0' + ((Copy_u16Score / 10u)  % 10u));

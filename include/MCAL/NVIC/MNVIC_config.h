@@ -8,13 +8,13 @@
  *  validates.
  *
  *  Reference: ARM PM0214 (Cortex-M4 Devices Generic User Guide)
- *             §4.2 (SCB / AIRCR), §4.3 (NVIC)
+ *             Â§4.2 (SCB / AIRCR), Â§4.3 (NVIC)
  *
  *  Revision history:
- *    Rev 1 — original (empty file; grouping was runtime state)
- *    Rev 2 — grouping becomes a COMPILE-TIME choice; the runtime
+ *    Rev 1 â€” original (empty file; grouping was runtime state)
+ *    Rev 2 â€” grouping becomes a COMPILE-TIME choice; the runtime
  *            static, its silent no-op window, and the re-interpretation
- *            hazard are all eliminated by design (see §1)
+ *            hazard are all eliminated by design (see Â§1)
  *
  *  Created on: Aug 1, 2026
  *      Author: dell
@@ -24,7 +24,7 @@
 #define MNVIC_CONFIG_H_
 
 /* =====================================================================
- *  1. Priority grouping  (user choice — ONE value, fixed at build)
+ *  1. Priority grouping  (user choice â€” ONE value, fixed at build)
  *
  *  The F401 implements 4 priority bits per interrupt (16 levels,
  *  0 = highest). PRIGROUP in AIRCR decides how those 4 bits split
@@ -42,14 +42,14 @@
  *
  *  Why 16/0 (the default below) is right for Project 4:
  *    - the roadmap's priority plan is flat: EXTI buttons > USART
- *      (ESP8266) > timers > SysTick — 16 distinct preemption levels
+ *      (ESP8266) > timers > SysTick â€” 16 distinct preemption levels
  *      is far more headroom than that plan ever uses;
  *    - sub-priorities only matter when interrupts must NEST inside
- *      their own group — nothing in the super-loop phases needs it.
+ *      their own group â€” nothing in the super-loop phases needs it.
  *
  *  Why this is compile-time and NOT runtime anymore (Rev 1 history):
- *    - the old runtime static initialized to 0 — not a valid case of
- *      the grouping switch — so every SetGroupPriority call before
+ *    - the old runtime static initialized to 0 â€” not a valid case of
+ *      the grouping switch â€” so every SetGroupPriority call before
  *      SetGroupsConfig silently did NOTHING, and the IRQ kept its
  *      reset priority 0 (the HIGHEST) instead of the intended one;
  *    - changing grouping at runtime silently re-interprets every IPR
@@ -65,7 +65,7 @@
 #define MNVIC_PRIORITY_GROUPING             MNVIC_PRIGROUP_16_0
 
 /* =====================================================================
- *  2. Derived values — DO NOT EDIT
+ *  2. Derived values â€” DO NOT EDIT
  *
  *  The PRIGROUP encoding IS the bit-split parameter, so the field
  *  geometry falls out of it directly:
@@ -77,7 +77,7 @@
  *          -> sub shift = 4
  *
  *  This one formula reproduces all five cases of the old five-case
- *  switch exactly — verified by the _Static_asserts in program.c.
+ *  switch exactly â€” verified by the _Static_asserts in program.c.
  * ===================================================================== */
 #define MNVIC_GROUP_PRIORITY_BITS     (7u  - MNVIC_PRIORITY_GROUPING)
 #define MNVIC_SUB_PRIORITY_BITS       (MNVIC_PRIORITY_GROUPING - 3u)
@@ -89,7 +89,7 @@
 #define MNVIC_SUB_PRIORITY_SHIFT      4u
 
 /* =====================================================================
- *  3. Configuration validation — bad values stop the build
+ *  3. Configuration validation â€” bad values stop the build
  * ===================================================================== */
 #if (MNVIC_PRIORITY_GROUPING < 3) || (MNVIC_PRIORITY_GROUPING > 7)
 #error "MNVIC: MNVIC_PRIORITY_GROUPING must be one of MNVIC_PRIGROUP_16_0/8_2/4_4/2_8/1_16 (3..7)"

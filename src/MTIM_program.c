@@ -1,7 +1,7 @@
 /*
  * MTIM_program.c
  *
- *  Implementation of the MTIM driver � the first NEW silicon driver of
+ *  Implementation of the MTIM driver - the first NEW silicon driver of
  *  the project (everything before this was revision of existing code).
  *
  *  Reference: RM0368 Rev 6, Ch 12/13/14
@@ -10,7 +10,7 @@
  *
  *  1. TABLE-DRIVEN FAMILY. One static table carries per instance: the
  *     register pointer, NVIC ids (update-IRQ and capture-IRQ differ on
- *     TIM1!), width, channel count, advanced flag, clock Hz � plus the
+ *     TIM1!), width, channel count, advanced flag, clock Hz - plus the
  *     mutable mode/callback state. The three register-map shapes are
  *     one superset struct + capability flags validated before access
  *     (absent registers on TIM9/10/11 are unreachable by construction).
@@ -21,7 +21,7 @@
  *     instead of silently compromising the third consumer.
  *
  *  3. SOLVER, NOT CONSTANTS. PSC/ARR are computed from the published
- *     clock model and a runtime target � the 16->84 MHz flip is
+ *     clock model and a runtime target - the 16->84 MHz flip is
  *     compile-time automatic, and impossible frequencies are rejected
  *     loudly (never a silently-wrong period).
  *
@@ -31,8 +31,8 @@
  *     Skipping the clear = an instant spurious interrupt on arming.
  *
  *  5. SR SNAPSHOT + WRITE-0-TO-CLEAR. One SR read at ISR entry (read
- *     is side-effect-free � no coupled sequences in this peripheral);
- *     per serviced flag: `SR = ~mask` (clears ONLY that bit � the
+ *     is side-effect-free - no coupled sequences in this peripheral);
+ *     per serviced flag: `SR = ~mask` (clears ONLY that bit - the
  *     MUSART-TC idiom, the OPPOSITE of EXTI's PR W1C).
  *
  *  6. NVIC PER THE LAYERING RULE. The driver enables its own IRQ lines
@@ -40,7 +40,7 @@
  *     are the application's.
  *
  *  Revision history:
- *    Rev 1 � first release
+ *    Rev 1 - first release
  *
  *  Created on: Sep 12, 2026
  *      Author: dell
@@ -162,7 +162,7 @@ MTIM_ReturnType_t MTIM_Init(void)
         }
         Local_u8SeenTimers |= (u8)(1uL << (u32)Local_CfgRow->Timer);
 
-        /* Frequency feasibility pre-check against the compiled clock �
+        /* Frequency feasibility pre-check against the compiled clock -
            a future edit that sets an impossible rate fails HERE, with
            the whole table still un-applied */
         if (Local_CfgRow->Mode == MTIM_MODE_PERIODIC)
@@ -175,7 +175,7 @@ MTIM_ReturnType_t MTIM_Init(void)
             Local_ReturnStatus = MTIM_privateSolveFreeRun(&MTIM_Instances[Local_CfgRow->Timer],
                                                           Local_CfgRow->FrequencyHz, &Local_u16Psc, &Local_u32Arr);
         }
-        else { /* NONE � nothing to solve */ }
+        else { /* NONE - nothing to solve */ }
 
         if (Local_ReturnStatus != MTIM_OK)
         {
@@ -357,7 +357,7 @@ MTIM_ReturnType_t MTIM_EnableUpdateInterrupt(MTIM_Timer_t Copy_Timer, MTIM_Updat
         return MTIM_INVALID_STATE;        /* no time-base configured yet */
     }
 
-    /* NO stale-UIF wipe � deliberate, documented contrast with MEXTI:
+    /* NO stale-UIF wipe - deliberate, documented contrast with MEXTI:
        a pending UIF at arm time is a REAL elapsed period (periodic
        semantics honor it; EXTI's edge semantics wipe instead). Init
        already cleared the UIF its UG produced. */
@@ -399,7 +399,7 @@ MTIM_ReturnType_t MTIM_EnableUpdateDMARequest(MTIM_Timer_t Copy_Timer)
                                          free-run UDE would fire per wrap */
     }
 
-    /* UDE: a DMA request, NOT a CPU interrupt � no NVIC, no ISR. Each
+    /* UDE: a DMA request, NOT a CPU interrupt - no NVIC, no ISR. Each
        update event paces one MDMA word (the corrected Option-b
        mechanism; MDMA owns the stream setup). */
     SET_BIT(Local_pInst->Reg->DIER, MTIM_DIER_UDE);
@@ -431,7 +431,7 @@ MTIM_ReturnType_t MTIM_PWMStart(MTIM_Timer_t Copy_Timer, MTIM_Channel_t Copy_Cha
     u32 Local_u32CcmrMask;
     u8  Local_u8FirstActivation = 0u;  /* NONE->PWM this call, vs. adding a
                                            channel to an already-running PWM
-                                           timer � only the former may force
+                                           timer - only the former may force
                                            EGR.UG (see the guarded re-latch
                                            below)                            */
 
@@ -494,7 +494,7 @@ MTIM_ReturnType_t MTIM_PWMStart(MTIM_Timer_t Copy_Timer, MTIM_Channel_t Copy_Cha
                      | (MTIM_CCER_CCXE(Copy_Channel)
                         | ((u32)Copy_Polarity * MTIM_CCER_CCXP(Copy_Channel)));
 
-    /* TIM1 ONLY: BDTR.MOE � without it, ALL TIM1 outputs are gated off
+    /* TIM1 ONLY: BDTR.MOE - without it, ALL TIM1 outputs are gated off
        (reset 0) and PWM produces SILENTLY nothing. The classic TIM1
        trap; this driver cannot be bitten by it. AOE stays 0: software
        re-arms after a break (we never enable break, so MOE persists). */
@@ -517,7 +517,7 @@ MTIM_ReturnType_t MTIM_PWMStart(MTIM_Timer_t Copy_Timer, MTIM_Channel_t Copy_Cha
        up to one period for a natural update event.
        DELIBERATELY SKIPPED on the add-a-channel path (ActiveMode was
        already PWM): EGR.UG zeroes CNT unconditionally, which would
-       reset the phase of every channel ALREADY running on this timer �
+       reset the phase of every channel ALREADY running on this timer -
        an audible/visible glitch on an active channel every time a new
        channel is added. Interrupts are still not armed for PWM either
        way, so this guard only changes the output-glitch behavior, not
@@ -552,7 +552,7 @@ MTIM_ReturnType_t MTIM_PWMSetDuty(MTIM_Timer_t Copy_Timer, MTIM_Channel_t Copy_C
     }
     Local_pReg = Local_pInst->Reg;
 
-    /* Re-solve the ARR from the active frequency (deterministic � same
+    /* Re-solve the ARR from the active frequency (deterministic - same
        solver, same clock model) instead of caching it. */
     Local_u32Arr = (Local_pInst->Is32Bit != 0u) ? 0xFFFFFFFFul : 0xFFFFu;
     (void)MTIM_privateSolvePeriodic(Local_pInst, Local_pInst->ActiveFrequencyHz, &Local_u16Psc, &Local_u32Arr);
@@ -595,7 +595,7 @@ static MTIM_ReturnType_t MTIM_privateArmCapture(MTIM_Instance_t *Copy_pInst,
     u32 Local_u32InputField = Copy_u32InputSelect;      /* CCxS raw encoding   */
 
     /* CCMR byte: input select in CCxS [1:0]; ICxPSC/ICxF stay 0
-       (no prescaler, no filter � NEC edges are ms-scale; the filter
+       (no prescaler, no filter - NEC edges are ms-scale; the filter
        exists for noisy lines, add a knob if ever needed) */
     if ((u32)Copy_Channel < 2u)
     {
@@ -615,7 +615,7 @@ static MTIM_ReturnType_t MTIM_privateArmCapture(MTIM_Instance_t *Copy_pInst,
 
     /* EXTI-semantics wipe: an edge that arrived BEFORE capture was
        configured is not the consumer's event (contrast the update-event
-       no-wipe decision � different event classes, different rules). */
+       no-wipe decision - different event classes, different rules). */
     Local_pReg->SR = ~MTIM_FLAG(MTIM_CC_IF_BIT(Copy_Channel));
 
     Copy_pInst->CaptureCallback[Copy_Channel] = Copy_pfCallback;
@@ -637,7 +637,7 @@ MTIM_ReturnType_t MTIM_CaptureStart(MTIM_Timer_t Copy_Timer, MTIM_Channel_t Copy
 
     Local_pInst = &MTIM_Instances[Copy_Timer];
 
-    /* Capture rides on the FREE-RUN time-base � loud ordering: the
+    /* Capture rides on the FREE-RUN time-base - loud ordering: the
        measurement base must exist before edges mean anything */
     if (Local_pInst->ActiveMode != MTIM_MODE_FREE_RUN)
     {
@@ -678,7 +678,7 @@ MTIM_ReturnType_t MTIM_CaptureStartBothEdges(MTIM_Timer_t Copy_Timer,
         return MTIM_INVALID_STATE;        /* channels already capturing     */
     }
 
-    /* THE NEC PATTERN: CH1 on TI1 rising; CH2 ALSO on TI1 (CC2S=10 �
+    /* THE NEC PATTERN: CH1 on TI1 rising; CH2 ALSO on TI1 (CC2S=10 -
        the one-pin/two-channel trick), falling. Marks AND spaces from
        one pin, no slave-mode machinery, counter stays free-running. */
     (void)MTIM_privateArmCapture(Local_pInst, MTIM_CH1, MTIM_CCMR_IN_TIx,
@@ -702,7 +702,7 @@ MTIM_ReturnType_t MTIM_CaptureStop(MTIM_Timer_t Copy_Timer, MTIM_Channel_t Copy_
     Local_pInst->Reg->CCER &= ~MTIM_CCER_CCX_MASK(Copy_Channel);
     CLR_BIT(Local_pInst->Reg->DIER, 1u + (u32)Copy_Channel);
     Local_pInst->CaptureCallback[Copy_Channel] = NULL;
-    /* NVIC NOT disabled � shared vectors (TIM1/9/10/11), MEXTI principle */
+    /* NVIC NOT disabled - shared vectors (TIM1/9/10/11), MEXTI principle */
     return MTIM_OK;
 }
 
@@ -724,14 +724,14 @@ MTIM_ReturnType_t MTIM_GetCapture(MTIM_Timer_t Copy_Timer, MTIM_Channel_t Copy_C
  *  aliases). TIM2..TIM5 have dedicated vectors; the TIM1/9/10/11 family
  *  shares four: TIM9 rides 24 ENTIRELY, TIM10 rides 25, TIM11 rides 26
  *  (their whole interrupt sets, one vector each), while TIM1's update
- *  pends 25 and its CC events pend 27 � hence the event-mask parameter:
+ *  pends 25 and its CC events pend 27 - hence the event-mask parameter:
  *  vector 27 services TIM1's CAPTURE events only, vector 25 its UPDATE
  *  only, so a coincidence of both flags can never double-callback.
  *
  *  STORM-SAFETY (the library invariant, timer edition): this driver can
  *  arm exactly UIE / CC1-4IE / UDE(no IRQ). Break and trigger/com
- *  interrupts are NEVER armable � BIE/TIE have no enable path in this
- *  code � so vectors 24/26 fire only for their small timer, and no
+ *  interrupts are NEVER armable - BIE/TIE have no enable path in this
+ *  code - so vectors 24/26 fire only for their small timer, and no
  *  unserviced flag is reachable. Every armable flag has a guaranteed
  *  write-0 clear inside its dispatch branch.
  * ========================================================================= */
@@ -741,7 +741,7 @@ static void MTIM_privateDispatch(MTIM_Timer_t Copy_Timer, u8 Copy_u8EventMask)
     MTIM_Instance_t           *Local_pInst = &MTIM_Instances[Copy_Timer];
     volatile MTIM_Registers_t *Local_pReg  = Local_pInst->Reg;
 
-    /* SR/DIER snapshots at entry � SR read is side-effect-free (no
+    /* SR/DIER snapshots at entry - SR read is side-effect-free (no
        coupled clears in this peripheral), so this is detection-stability
        hygiene, not a bug fix: flags set after the snapshot re-pend and
        are serviced on the next entry. Conservative, never lossy. */
@@ -763,7 +763,7 @@ static void MTIM_privateDispatch(MTIM_Timer_t Copy_Timer, u8 Copy_u8EventMask)
     }
 
     /* ---- Capture channels (per-instance channel count gates absent
-            registers � TIM10/11's nonexistent CCR3/CCMR2 are structurally
+            registers - TIM10/11's nonexistent CCR3/CCMR2 are structurally
             unreachable here) ---- */
     if ((Copy_u8EventMask & (u8)MTIM_PRIVATE_EV_CAPTURE) != 0u)
     {
@@ -777,7 +777,7 @@ static void MTIM_privateDispatch(MTIM_Timer_t Copy_Timer, u8 Copy_u8EventMask)
 
                 /* Overcapture (a second edge before CCR was read): clear
                    it in the same store; the delivered timestamp is the
-                   OLDER edge � impossible at NEC rates, handled anyway. */
+                   OLDER edge - impossible at NEC rates, handled anyway. */
                 if (((Local_u32Sr >> MTIM_CC_OF_BIT(Local_u8Channel)) & 1u) != 0u)
                 {
                     Local_u32ClearMask |= MTIM_FLAG(MTIM_CC_OF_BIT(Local_u8Channel));
@@ -794,7 +794,7 @@ static void MTIM_privateDispatch(MTIM_Timer_t Copy_Timer, u8 Copy_u8EventMask)
     }
 }
 
-/* ---- Public vector-table entries (linkage only � not API) ---- */
+/* ---- Public vector-table entries (linkage only - not API) ---- */
 
 void TIM2_IRQHandler(void)               { MTIM_privateDispatch(MTIM_TIM2, (u8)MTIM_PRIVATE_EV_ALL); }
 void TIM3_IRQHandler(void)               { MTIM_privateDispatch(MTIM_TIM3, (u8)MTIM_PRIVATE_EV_ALL); }
@@ -802,21 +802,21 @@ void TIM4_IRQHandler(void)               { MTIM_privateDispatch(MTIM_TIM4, (u8)M
 void TIM5_IRQHandler(void)               { MTIM_privateDispatch(MTIM_TIM5, (u8)MTIM_PRIVATE_EV_ALL); }
 
 /* TIM1 break vector carries TIM9 entirely; TIM1 break is never armed
-   by this driver (BIE has no enable path) � dispatch TIM9 only. */
+   by this driver (BIE has no enable path) - dispatch TIM9 only. */
 void TIM1_BRK_TIM9_IRQHandler(void)      { MTIM_privateDispatch(MTIM_TIM9,  (u8)MTIM_PRIVATE_EV_ALL); }
 
 /* TIM1 update vector carries TIM10 entirely; TIM1's OWN update is
-   serviced here too � UPDATE events only (its CC events pend 27). */
+   serviced here too - UPDATE events only (its CC events pend 27). */
 void TIM1_UP_TIM10_IRQHandler(void)
 {
     MTIM_privateDispatch(MTIM_TIM1,  (u8)MTIM_PRIVATE_EV_UPDATE);
     MTIM_privateDispatch(MTIM_TIM10, (u8)MTIM_PRIVATE_EV_ALL);
 }
 
-/* TIM11's vector; TIM1 trigger/commutation never armed � TIM11 only. */
+/* TIM11's vector; TIM1 trigger/commutation never armed - TIM11 only. */
 void TIM1_TRG_COM_TIM11_IRQHandler(void) { MTIM_privateDispatch(MTIM_TIM11, (u8)MTIM_PRIVATE_EV_ALL); }
 
-/* TIM1 capture/compare ONLY � the event mask is what prevents a
+/* TIM1 capture/compare ONLY - the event mask is what prevents a
    UIF+CCxIF coincidence from double-callbacking across vectors 25/27. */
 void TIM1_CC_IRQHandler(void)            { MTIM_privateDispatch(MTIM_TIM1,  (u8)MTIM_PRIVATE_EV_CAPTURE); }
 
@@ -856,7 +856,7 @@ static MTIM_ReturnType_t MTIM_privateValidateChannel(MTIM_Timer_t Copy_Timer, MT
         Total counts D = CLK / f. pscDiv = ceil(D / (maxArr+1)) is the
         smallest divider keeping ARR in range; PSC = pscDiv-1 (16-bit,
         checked), ARR = D/pscDiv - 1. Integer floors: error <= one
-        count per period (ppm-scale). u64 math throughout � the 16-bit
+        count per period (ppm-scale). u64 math throughout - the 16-bit
         corner (65536 * 65536) overflows u32. ---------------------------- */
 static MTIM_ReturnType_t MTIM_privateSolvePeriodic(const MTIM_Instance_t *Copy_pInst, u32 Copy_u32FrequencyHz,
                                                    u16 *Copy_pu16Psc, u32 *Copy_pu32Arr)
@@ -906,7 +906,7 @@ static MTIM_ReturnType_t MTIM_privateSolveFreeRun(const MTIM_Instance_t *Copy_pI
 }
 
 /* ---- The UG latch sequence (design principle 4): PSC written to the
-        register goes live only at an update event � write, then force
+        register goes live only at an update event - write, then force
         EGR.UG (immediate latch + CNT zeroed), then clear the UIF the
         UG just SET (skip the clear = instant spurious interrupt on
         the first arming; the MEXTI stale-pending trap, timer edition). */

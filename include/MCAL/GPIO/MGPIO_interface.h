@@ -6,13 +6,13 @@
  *
  *  Reference: RM0368 (STM32F401xB/xC Reference Manual), Ch. 8: GPIO
  *
- *  DEPENDENCY — clock enable is MANDATORY before any MGPIO call:
+ *  DEPENDENCY â€” clock enable is MANDATORY before any MGPIO call:
  *      MRCC_EnablePeripheralClock(MRCC_GPIOA);   // or GPIOB / GPIOC
  *  Register writes to an un-clocked port are silently ignored by
- *  hardware: no bus error, no fault — just nothing happens. That is
+ *  hardware: no bus error, no fault â€” just nothing happens. That is
  *  the classic "no error anywhere, nothing works" trap.
  *
- *  CONCURRENCY CONTRACT — every function that changes pin state does
+ *  CONCURRENCY CONTRACT â€” every function that changes pin state does
  *  so with a single register store (BSRR, or a direct ODR/AFR word
  *  write). All functions are therefore safe to call from ISRs and safe
  *  against ISRs touching the same port. There is deliberately NO
@@ -21,7 +21,7 @@
  *  Pins used as interrupts (buttons) are configured HERE (mode +
  *  pull); the interrupt side is owned by MEXTI, not this driver.
  *
- *  NOTE — replaces MGPIO_interfacee.h (the double-'e' filename typo,
+ *  NOTE â€” replaces MGPIO_interfacee.h (the double-'e' filename typo,
  *  which had leaked into the include guard and every #include line).
  *  Rename the include in every consumer and delete the old file.
  *
@@ -35,11 +35,11 @@
 #include "STD_TYPES.h"
 
 /* =====================================================================
- *  Driver status codes — same convention as MRCC_ReturnType_t
+ *  Driver status codes â€” same convention as MRCC_ReturnType_t
  *
  *  C enums are NOT type-safe: garbage values compile cleanly. So every
  *  function range-checks EVERY enum parameter and returns a loud error
- *  instead of the old behavior — silently doing nothing (or worse,
+ *  instead of the old behavior â€” silently doing nothing (or worse,
  *  half-applying a configuration).
  *
  *  Pin validity is a separate error from parameter validity: a pin can
@@ -74,7 +74,7 @@ typedef enum
  *  Pin identifier
  *
  *  Values equal the pin NUMBER and are used directly as bit positions
- *  and shift counts by the driver — keep them 0..15 in order.
+ *  and shift counts by the driver â€” keep them 0..15 in order.
  * ===================================================================== */
 typedef enum
 {
@@ -85,26 +85,26 @@ typedef enum
 } MGPIO_Pin_t;
 
 /* =====================================================================
- *  Pin mode (MODER encodings — values written to hardware as-is)
+ *  Pin mode (MODER encodings â€” values written to hardware as-is)
  *
  *  ANALOG disables the digital input/output cell (also the correct
  *  state for unused pins: lowest power, no floating-input noise).
  * ===================================================================== */
 typedef enum
 {
-    MGPIO_MODE_INPUT = 0,           /* MODER 00 — digital input        */
-    MGPIO_MODE_OUTPUT,              /* MODER 01 — general purpose out  */
-    MGPIO_MODE_ALT_FUNC,            /* MODER 10 — peripheral mapped    */
-    MGPIO_MODE_ANALOG               /* MODER 11 — analog / unused      */
+    MGPIO_MODE_INPUT = 0,           /* MODER 00 â€” digital input        */
+    MGPIO_MODE_OUTPUT,              /* MODER 01 â€” general purpose out  */
+    MGPIO_MODE_ALT_FUNC,            /* MODER 10 â€” peripheral mapped    */
+    MGPIO_MODE_ANALOG               /* MODER 11 â€” analog / unused      */
 } MGPIO_Mode_t;
 
 /* =====================================================================
- *  Output type (OTYPER encoding) — applies in OUTPUT and ALT_FUNC modes
+ *  Output type (OTYPER encoding) â€” applies in OUTPUT and ALT_FUNC modes
  * ===================================================================== */
 typedef enum
 {
-    MGPIO_OUTPUT_PUSH_PULL = 0,     /* OTYPER 0 — driven both ways     */
-    MGPIO_OUTPUT_OPEN_DRAIN         /* OTYPER 1 — driven low, floats
+    MGPIO_OUTPUT_PUSH_PULL = 0,     /* OTYPER 0 â€” driven both ways     */
+    MGPIO_OUTPUT_OPEN_DRAIN         /* OTYPER 1 â€” driven low, floats
                                        high (I2C-style lines; needs a
                                        pull-up, often external)       */
 } MGPIO_OutputType_t;
@@ -112,7 +112,7 @@ typedef enum
 /* =====================================================================
  *  Output speed (OSPEEDR encodings)
  *
- *  Slew/drive strength vs. toggle rate — see the datasheet's "output
+ *  Slew/drive strength vs. toggle rate â€” see the datasheet's "output
  *  speed vs. toggle frequency" guidance. Practical rule of thumb:
  *      LEDs, slow control lines      -> MGPIO_SPEED_LOW   (less EMI)
  *      SPI to the TFT later at high
@@ -127,18 +127,18 @@ typedef enum
 } MGPIO_Speed_t;
 
 /* =====================================================================
- *  Pull configuration (PUPDR encodings) — valid in ANY pin mode
+ *  Pull configuration (PUPDR encodings) â€” valid in ANY pin mode
  *
  *  Inputs: defines the idle level of floating lines.
  *  Outputs / AF: internal pull usable on open-drain-style lines.
- *  Analog: a pull only wastes current — see
+ *  Analog: a pull only wastes current â€” see
  *  MGPIO_ANALOG_MODE_CLEARS_PULL in MGPIO_config.h.
  * ===================================================================== */
 typedef enum
 {
     MGPIO_NO_PULL = 0,              /* PUPDR 00 */
-    MGPIO_PULL_UP,                  /* PUPDR 01 — ~40 kOhm typical     */
-    MGPIO_PULL_DOWN                 /* PUPDR 10 — ~40 kOhm typical     */
+    MGPIO_PULL_UP,                  /* PUPDR 01 â€” ~40 kOhm typical     */
+    MGPIO_PULL_DOWN                 /* PUPDR 10 â€” ~40 kOhm typical     */
 } MGPIO_Pull_t;
 
 /* =====================================================================
@@ -154,7 +154,7 @@ typedef enum
  *  Alternate function select (AFR encodings, AF0..AF15)
  *
  *  The 4-bit AFR field can select AF0..AF15. Which functions exist on
- *  WHICH pins is per-pin — always confirm in RM0368's alternate
+ *  WHICH pins is per-pin â€” always confirm in RM0368's alternate
  *  function table. Typical F401 assignments:
  *      AF0  : SWD/JTAG debug (reset default on PA13/PA14), MCO
  *      AF1/2/3 : TIM1/TIM2, TIM3/TIM4/TIM5, TIM9/TIM10/TIM11
@@ -187,7 +187,7 @@ MGPIO_ReturnType_t MGPIO_SetPinMode(MGPIO_Port_t Copy_Port, MGPIO_Pin_t Copy_Pin
 
 /* ---- Output stage ----------------------------------------------------- */
 /* Write OTYPER + OSPEEDR for the pin. Meaningful in OUTPUT mode AND in
-   ALT_FUNC mode — alternate functions drive the pin through this same
+   ALT_FUNC mode â€” alternate functions drive the pin through this same
    output stage (SPI MOSI wants push-pull, I2C AF pins want
    open-drain). No effect while the pin is INPUT/ANALOG.
    Both parameters are validated BEFORE anything is written, so a bad
@@ -198,7 +198,7 @@ MGPIO_ReturnType_t MGPIO_SetPinOutputConfig(MGPIO_Port_t Copy_Port, MGPIO_Pin_t 
                                             MGPIO_Speed_t       Copy_Speed);
 
 /* ---- Pulls ------------------------------------------------------------ */
-/* Write the pin's PUPDR field. Valid in ANY mode — the old name
+/* Write the pin's PUPDR field. Valid in ANY mode â€” the old name
    (SetInputCONFIG) implied input-only, which was wrong. */
 MGPIO_ReturnType_t MGPIO_SetPinPull(MGPIO_Port_t Copy_Port, MGPIO_Pin_t Copy_Pin,
                                     MGPIO_Pull_t Copy_Pull);
@@ -215,7 +215,7 @@ MGPIO_ReturnType_t MGPIO_SetPinAltFunction(MGPIO_Port_t Copy_Port, MGPIO_Pin_t C
 
 /* Set or reset ONE pin, atomically, via a single BSRR write.
    Replaces BOTH the old ODR read-modify-write version (racy against
-   ISRs on the same port) and the old separate "Atomic" variant — one
+   ISRs on the same port) and the old separate "Atomic" variant â€” one
    API, always safe. The value reaches the physical pin when the pin is
    in OUTPUT (or open-drain AF) mode; otherwise it just updates the ODR
    latch. */
@@ -223,7 +223,7 @@ MGPIO_ReturnType_t MGPIO_SetPinValue(MGPIO_Port_t Copy_Port, MGPIO_Pin_t Copy_Pi
                                      MGPIO_PinValue_t Copy_PinValue);
 
 /* Atomically write EVERY pin selected by Copy_u16Mask to the matching
-   bit of Copy_u16Value — ONE BSRR write total:
+   bit of Copy_u16Value â€” ONE BSRR write total:
         Mask bit N = 1 -> pin N is driven to (Value >> N) & 1
         Mask bit N = 0 -> pin N is completely untouched
    The set field (Value & Mask) and reset field (~Value & Mask) are
@@ -236,12 +236,12 @@ MGPIO_ReturnType_t MGPIO_WritePins(MGPIO_Port_t Copy_Port,
                                    u16 Copy_u16Mask, u16 Copy_u16Value);
 
 /* Write the full 16-bit ODR word in one atomic store. ALL pins of the
-   port update — use when there are no "untouched" pins to preserve. */
+   port update â€” use when there are no "untouched" pins to preserve. */
 MGPIO_ReturnType_t MGPIO_SetPortValue(MGPIO_Port_t Copy_Port, u16 Copy_u16Value);
 
 /* ---- Reading pin state ---------------------------------------------------- */
 
-/* Read ONE pin from IDR. IDR returns the ACTUAL pin level — for output
+/* Read ONE pin from IDR. IDR returns the ACTUAL pin level â€” for output
    pins this is the real state on the pin (short/overload detection),
    not merely the ODR latch. The level is delivered through the pointer
    and the function returns only status: an invalid port/pin can no
@@ -250,7 +250,7 @@ MGPIO_ReturnType_t MGPIO_SetPortValue(MGPIO_Port_t Copy_Port, u16 Copy_u16Value)
 MGPIO_ReturnType_t MGPIO_GetPinValue(MGPIO_Port_t Copy_Port, MGPIO_Pin_t Copy_Pin,
                                      u8 *Copy_pu8Value);
 
-/* Read the full 16-bit IDR word — whole-port input snapshot in one
+/* Read the full 16-bit IDR word â€” whole-port input snapshot in one
    read (button-matrix row/column scanning). */
 MGPIO_ReturnType_t MGPIO_GetPortValue(MGPIO_Port_t Copy_Port, u16 *Copy_pu16Value);
 
@@ -276,7 +276,7 @@ MGPIO_ReturnType_t MGPIO_GetPortValue(MGPIO_Port_t Copy_Port, u16 *Copy_pu16Valu
  *                               MGPIO_OUTPUT_PUSH_PULL, MGPIO_SPEED_HIGH);
  *      MGPIO_SetPinAltFunction(MGPIO_PORTA, MGPIO_PIN_9, MGPIO_AF7);
  *
- *  8-bit R2R DAC on PB0..PB7 — glitch-free single-write update:
+ *  8-bit R2R DAC on PB0..PB7 â€” glitch-free single-write update:
  *      MGPIO_WritePins(MGPIO_PORTB, 0x00FFu, Local_u8Sample);
  * ===================================================================== */
 

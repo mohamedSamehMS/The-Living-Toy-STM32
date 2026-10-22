@@ -1,5 +1,5 @@
 /*
- * NET_program.c — the Network Driver (L1 protocol + connection
+ * NET_program.c â€” the Network Driver (L1 protocol + connection
  * state), implementation. LOCATION: APP/NET/.
  *
  *  PROVENANCE [MOVE]: pure moves from the delivered TTT_session.c
@@ -9,8 +9,8 @@
  *  B1: the teardown + the recovery (the four branches, the link
  *  state's LOST arm, SocketIsNew).
  *
- *  FOTA-CS + SHEET C RIPPLE: the FOTA family per Sheet C (FROZEN —
- *  the owner's adoption + the ESP seat's countersign) — the parser
+ *  FOTA-CS + SHEET C RIPPLE: the FOTA family per Sheet C (FROZEN â€”
+ *  the owner's adoption + the ESP seat's countersign) â€” the parser
  *  branches, the two transactions, the 90 s zero-byte epoch watchdog
  *  (FOTA-06 double-read confirm on the firing path), Addendum A.
  *  NET owns the wire mode and NEVER calls into APP_FOTA.
@@ -22,11 +22,11 @@
  *  HUB->NET, events NET->HUB, both by value) and three atomic-u8
  *  flags. The parser's RESP_MATCH_STATE writes are critical-section
  *  guarded. THE DEFERRED LINK: USART1's entire bring-up lives inside
- *  the bring-up command — the online entry's act, never boot.
+ *  the bring-up command â€” the online entry's act, never boot.
  *
- *  R5 (the FOTA wiring): + NET_CMD_SOLICIT (the offer solicitation —
+ *  R5 (the FOTA wiring): + NET_CMD_SOLICIT (the offer solicitation â€”
  *  the D15 re-emit; the ESP re-offers at STM_READY/reconnect only)
- *  and NET_CMD_ESP_FRESET (the hub-day stuck-stage recovery — the
+ *  and NET_CMD_ESP_FRESET (the hub-day stuck-stage recovery â€” the
  *  ESP seat's bench lines originated on the wire; both confirmations
  *  granted, v0.4.1-traced: the bare word passes the console gate
  *  with debug narration armed; zero settle time; the RAM offer
@@ -53,7 +53,7 @@
 #include <HAL/ESP/HESP_interface.h>
 
 /* ================================================================= *
- *  SECTION 1 — PROTOCOL                                             *
+ *  SECTION 1 â€” PROTOCOL                                             *
  * ================================================================= */
 
 static char Global_chLines[NET_LINE_QUEUE_DEPTH][NET_LINE_MAX + 1u];
@@ -61,8 +61,8 @@ static u8   Global_u8LineHead;
 static u8   Global_u8LineCount;
 static u8   Global_u8LinesDropped;
 
-/* ABSORPTION: the event queue is a FreeRTOS queue — NET-task-produced
- * (parser / TX_FAIL / timeout / watchdog — all single-context), HUB-
+/* ABSORPTION: the event queue is a FreeRTOS queue â€” NET-task-produced
+ * (parser / TX_FAIL / timeout / watchdog â€” all single-context), HUB-
  * consumed. The hand-rolled array is retired. u32 counter: the
  * nobody-drains-during-other-games era can drop more than 255. */
 static u32 Global_u8EventsDropped;
@@ -98,13 +98,13 @@ static QueueHandle_t Global_xCmdQueue = NULL;
 static QueueHandle_t Global_xEvtQueue = NULL;
 static u8 Global_u8BroughtUp = 0u;
 
-TaskHandle_t NET_xTaskHandle = NULL;   /* DEBUG R4D: non-static — the [ST2] line reads it */
+TaskHandle_t NET_xTaskHandle = NULL;   /* DEBUG R4D: non-static â€” the [ST2] line reads it */
 
-#define NET_TASK_PERIOD_MS    10u    /* the pump's pacing — against the
+#define NET_TASK_PERIOD_MS    10u    /* the pump's pacing â€” against the
                                         1.1-1.7 s RTT, +5 ms is noise   */
 #define NET_TASK_STACK_WORDS  512u   /* 2 KB: the parser's ~450 B of locals
                                         + the kernel send paths, generous */
-#define NET_TASK_PRIORITY     1u     /* the comm class — the ladder      */
+#define NET_TASK_PRIORITY     1u     /* the comm class â€” the ladder      */
 
 /* ---- the line hook (loop context, from inside TransportPoll) ---- */
 static void NET_voidLineHook(const u8 *Copy_pu8Line, u16 Copy_u16Len)
@@ -149,7 +149,7 @@ static u8 NET_u8AllocTid(void)
 }
 
 /* ---- send + pending (one transaction; a new command abandons
-   a live one — its reply lands in the late counter). NET-TASK
+   a live one â€” its reply lands in the late counter). NET-TASK
    CONTEXT ONLY. ---- */
 static NET_EnumStatus_t NET_ENUM_SEND_CMD(const char *Copy_chName, u8 Copy_u8Tid,
                                           const char *Copy_chField1,
@@ -213,7 +213,7 @@ static u32 NET_u32ParseDec(const char *Copy_chSrc)
     return Local_u32Value;
 }
 
-/* FOTA-CS: the epoch's single close path — wire mode to text. */
+/* FOTA-CS: the epoch's single close path â€” wire mode to text. */
 static void NET_voidFotaClose(void)
 {
     if (Global_u8FotaEpoch != 0u)
@@ -345,7 +345,7 @@ static void NET_voidParseLine(const char *Copy_chLine)
         Local_stEvent.Type = NET_EVT_STATE;
         /* ABSORPTION: the LOW-priority writer (NET, prio 1) must not be
          * preempted mid-struct by the HIGH-priority reader (HUB, prio 2)
-         * — the critical section masks the tick, making the write
+         * â€” the critical section masks the tick, making the write
          * sequence atomic-as-a-whole. The reader needs no guard: NET
          * never preempts HUB. Readers see old-or-new, never torn.     */
         taskENTER_CRITICAL();
@@ -543,7 +543,7 @@ static void NET_voidCopyBounded(char *Copy_chDst, u8 Copy_u8DstSize, const char 
 }
 
 /* ================================================================= *
- *  THE RTOS CONVERSION — bring-up, executor, task, spawn            *
+ *  THE RTOS CONVERSION â€” bring-up, executor, task, spawn            *
  * ================================================================= */
 
 /* ---- the deferred link (the online entry's command; idempotent) --- */
@@ -587,7 +587,7 @@ static void NET_PRIVATE_Bringup(void)
 
     HESP_TransportInit(NET_LINK_USART, NET_voidLineHook);
 
-    /* D15: the double EVENT_STM_READY — TASK-PACED. */
+    /* D15: the double EVENT_STM_READY â€” TASK-PACED. */
     for (Local_u8Idx = 0u; Local_u8Idx < 2u; Local_u8Idx++)
     {
         (void)HESP_TxBegin("EVENT_STM_READY", 0u);
@@ -618,9 +618,9 @@ static void NET_PRIVATE_ExecuteCmd(const NET_Cmd_t *Copy_pstCmd)
         break;
 
     case NET_CMD_SOLICIT:
-        /* R5: the D15 pair, verbatim — the ESP's re-offer trigger.
+        /* R5: the D15 pair, verbatim â€” the ESP's re-offer trigger.
          * (Idempotent-safe: harmless when the link is already up;
-         * the ESP re-offers on each STM_READY — the second of the pair
+         * the ESP re-offers on each STM_READY â€” the second of the pair
          * yields a refresh offer, not a duplicate ceremony.)        */
         {
             u8 Local_u8Idx;
@@ -639,18 +639,18 @@ static void NET_PRIVATE_ExecuteCmd(const NET_Cmd_t *Copy_pstCmd)
         break;
 
     case NET_CMD_ESP_FRESET:
-        /* R5: THE HUB-DAY FRESET — the ESP seat's stuck-stage recovery,
+        /* R5: THE HUB-DAY FRESET â€” the ESP seat's stuck-stage recovery,
          * both confirmations granted (v0.4.1-traced). The bench form's
          * two lines, originated on the wire: the DEBUG-arming
          * transaction first (the console gate's load-bearing condition),
          * then the literal word as a bare EVENT-shaped line (no prefix,
-         * no TID — passes the console gate by direct string-compare;
+         * no TID â€” passes the console gate by direct string-compare;
          * single-threaded line processing guarantees the ordering; the
          * CMD_DEBUG terminal is emitted before FWRESET is even read).
          * The wipe is synchronous and complete before the handler
-         * returns — a BEGIN in the very next line is legal (N=0).
+         * returns â€” a BEGIN in the very next line is legal (N=0).
          * The RAM offer SURVIVES (only /fw.bin, /fw_meta.bin, and the
-         * staging struct are wiped) — the next BEGIN re-fetches clean. */
+         * staging struct are wiped) â€” the next BEGIN re-fetches clean. */
         (void)NET_ENUM_SEND_CMD("CMD_DEBUG", NET_u8AllocTid(), "1", 0);
         (void)HESP_TxBegin("FWRESET", 0u);
         (void)HESP_TxSend();
@@ -858,7 +858,7 @@ NET_EnumStatus_t NET_enumBringup(void)
     return NET_PRIVATE_EnqueueCmd(&Local_stCmd);
 }
 
-/* ---- R5: the offer solicitation — the D15 re-emit ------------------ */
+/* ---- R5: the offer solicitation â€” the D15 re-emit ------------------ */
 NET_EnumStatus_t NET_enumSolicitOffer(void)
 {
     NET_Cmd_t Local_stCmd;
@@ -867,7 +867,7 @@ NET_EnumStatus_t NET_enumSolicitOffer(void)
     return NET_PRIVATE_EnqueueCmd(&Local_stCmd);
 }
 
-/* ---- R5: the hub-day FRESET — the stuck-stage recovery ------------- */
+/* ---- R5: the hub-day FRESET â€” the stuck-stage recovery ------------- */
 NET_EnumStatus_t NET_enumEspFreset(void)
 {
     NET_Cmd_t Local_stCmd;

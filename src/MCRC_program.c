@@ -1,25 +1,25 @@
 /*
  * MCRC_program.c
  *
- *  Implementation of the MCRC driver — the smallest driver in the
+ *  Implementation of the MCRC driver â€” the smallest driver in the
  *  library: three registers, no interrupts, no timing, no config.
  *
- *  Reference: RM0368 Rev 6, Ch 4 (CRC), §4.4
+ *  Reference: RM0368 Rev 6, Ch 4 (CRC), Â§4.4
  *
  *  DESIGN PRINCIPLES:
  *   1. ONE CANONICAL FEEDING MODE (FOTA-03 TRAP 2): byte stream in
  *      address order, each word byte-reversed before the DR write
  *      (the unit consumes MSB-first). Every entry point goes through
- *      it — an un-reversed feed computes the CRC of a reversed stream,
+ *      it â€” an un-reversed feed computes the CRC of a reversed stream,
  *      plausible-looking and wrong.
  *   2. RESET DISCIPLINE (FOTA-03 correctness note 1): DR retains
  *      state; CalcBuffer resets internally, CalcWord is deliberately
- *      streaming — the caller pairs it with MCRC_Reset.
+ *      streaming â€” the caller pairs it with MCRC_Reset.
  *   3. NO STORM SURFACE: no IRQ line exists; nothing to arm, nothing
  *      to service.
  *
  *  Revision history:
- *    Rev 1 — first release
+ *    Rev 1 â€” first release
  *
  *  Created on: Sep 15, 2026
  */
@@ -40,7 +40,7 @@ MCRC_ReturnType_t MCRC_Init(void)
 {
     if (MRCC_EnablePeripheralClock(MRCC_CRC) != MRCC_OK)
     {
-        return MCRC_NOT_INITIALIZED;    /* unreachable with our enum — belt
+        return MCRC_NOT_INITIALIZED;    /* unreachable with our enum â€” belt
                                            and braces */
     }
     MCRC_CRC_REG->CR = (1uL << MCRC_CR_RESET);   /* clean state        */
@@ -70,7 +70,7 @@ MCRC_ReturnType_t MCRC_CalcBuffer(const u8 *Copy_pu8Data, u32 Copy_u32Length,
 
     (void)MCRC_Reset();
 
-    /* Full words — canonical mode: assemble each word in address order,
+    /* Full words â€” canonical mode: assemble each word in address order,
        bswap it (unit eats MSB first), write DR. */
     for (Local_u32Index = 0u; Local_u32Index < Local_u32WordCount; Local_u32Index++)
     {
@@ -84,7 +84,7 @@ MCRC_ReturnType_t MCRC_CalcBuffer(const u8 *Copy_pu8Data, u32 Copy_u32Length,
         MCRC_CRC_REG->DR = Local_u32Word;
     }
 
-    /* Tail: pad with 0x00 to the word boundary (the documented rule —
+    /* Tail: pad with 0x00 to the word boundary (the documented rule â€”
        part of the cross-seat triple) */
     if (Local_u32TailBytes != 0u)
     {
@@ -106,7 +106,7 @@ MCRC_ReturnType_t MCRC_CalcWord(u32 Copy_u32Word, u32 *Copy_pu32Crc)
 
     /* Streaming primitive: the word arrives CANONICAL (byte-reversed).
        The bootloader reads flash words natively (little-endian) and
-       passes __builtin_bswap32(word) — or uses CalcBuffer. */
+       passes __builtin_bswap32(word) â€” or uses CalcBuffer. */
     MCRC_CRC_REG->DR = Copy_u32Word;
     *Copy_pu32Crc = MCRC_CRC_REG->DR;
     return MCRC_OK;
@@ -125,7 +125,7 @@ MCRC_ReturnType_t MCRC_SelfTest(void)
     if (Local_u32Crc != MCRC_KAT_EXPECTED)
     {
         return MCRC_SELFTEST_FAILED;   /* correct the config constant to the
-                                          MEASURED value, then re-run — the
+                                          MEASURED value, then re-run â€” the
                                           ground-truth rule, applied to
                                           ourselves */
     }

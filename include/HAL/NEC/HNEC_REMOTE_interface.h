@@ -1,16 +1,16 @@
 /*
- * HNEC_REMOTE_interface.h — NEC remote controller, PUBLIC INTERFACE
+ * HNEC_REMOTE_interface.h â€” NEC remote controller, PUBLIC INTERFACE
  *
  *  The ONLY file the application includes for the IR remote (echo
  *  builds additionally include HIR_interface.h for raw frames).
  *  All tunables live in HNEC_REMOTE_config.h; the link layer it
  *  consumes is HIR.
  *
- *  Reference: design guide "HIR Driver — Design Guide (HAL NEC IR
- *             Remote)"; feature notes "NEC IR Remote — Design Notes".
+ *  Reference: design guide "HIR Driver â€” Design Guide (HAL NEC IR
+ *             Remote)"; feature notes "NEC IR Remote â€” Design Notes".
  *
  *  ===================================================================
- *  THE TIMING COST — NOT HIDDEN, BY DESIGN (read before using):
+ *  THE TIMING COST â€” NOT HIDDEN, BY DESIGN (read before using):
  *
  *  HNEC_REMOTE_enumGetEvent() BLOCKS the calling loop while it works
  *  (it drives HIR's decode + the quiet windows):
@@ -23,7 +23,7 @@
  *
  *  During every one of those stalls: the SysTick 1 ms tick keeps
  *  running (LED matrix POV stays alive, ms timebase stays correct),
- *  and higher-priority ISRs (buttons, DMA, USART) keep firing — their
+ *  and higher-priority ISRs (buttons, DMA, USART) keep firing â€” their
  *  flags latch and are serviced after the stall. ONLY thread-context
  *  work (game logic, TFT redraw) waits. This is the documented
  *  Phase-1 super-loop trade-off; the Phase-2 input-capture migration
@@ -41,13 +41,13 @@
  *      2. MRCC_EnablePeripheralClock(MRCC_GPIOA)
  *      3. MRCC_EnablePeripheralClock(MRCC_SYSCFG)
  *      4. MNVIC_Init();  MNVIC_SetPriority(MNVIC_EXTI0, 1, 0)
- *      5. MEXTI_Init()   // table MUST contain the LINE0/PORTA row —
+ *      5. MEXTI_Init()   // table MUST contain the LINE0/PORTA row â€”
  *                        // see the cross-driver note in HIR_config.h
  *      6. MSYSTICK_Init()
  *      7. HNEC_REMOTE_enumInit()   // initializes HIR internally
  *
  *  Boot window note: MEXTI_Init arms line 0 at step 5 while the
- *  callback is registered at step 7 — an IR press in that window
+ *  callback is registered at step 7 â€” an IR press in that window
  *  pends, fires, dispatches nothing, and is dropped. Harmless;
  *  documented so it is never a mystery.
  *
@@ -60,7 +60,7 @@
 #include "STD_TYPES.h"
 #include "HAL/HVirtualButtons_interface.h"     /* VirtualButton_t */
 
-/* Driver status — the library convention */
+/* Driver status â€” the library convention */
 typedef enum
 {
     HNEC_REMOTE_OK = 0,       /* Event delivered / operation done       */
@@ -75,7 +75,7 @@ typedef enum
  *  Button   : the virtual role (never BTN_NONE on a delivered event)
  *  IsRepeat : 0 = fresh press (NEC data frame)
  *             1 = held-button auto-repeat (NEC repeat frame, emitted
- *                 only for repeat-allowed roles — config §4)          */
+ *                 only for repeat-allowed roles â€” config Â§4)          */
 typedef struct
 {
     VirtualButton_t Button;
@@ -87,7 +87,7 @@ typedef struct
  * ===================================================================== */
 
 /* Initialize the remote: runs HIR_enumInit (pin, trigger, callback,
- * arm — HIR's prerequisites must have run; see the boot banner), then
+ * arm â€” HIR's prerequisites must have run; see the boot banner), then
  * resets device-layer state (no pending event, no last-accepted
  * button, no callback, ENABLED). Re-calling is harmless. */
 HNEC_REMOTE_EnumStatus_t HNEC_REMOTE_enumInit(void);
@@ -104,23 +104,23 @@ HNEC_REMOTE_EnumStatus_t HNEC_REMOTE_enumGetEnabledState(u8 *Copy_pu8State);
 
 /* ---- THE consumption call (polling model) ---------------------------
  * Call every super-loop iteration. Runs the full service when a frame
- * has arrived (see the timing-cost banner — it BLOCKS ~270 ms), then
+ * has arrived (see the timing-cost banner â€” it BLOCKS ~270 ms), then
  * delivers one pending event. Returns:
- *   HNEC_REMOTE_OK          — event copied out (pending slot emptied)
- *   HNEC_REMOTE_NO_NEW_EVENT— nothing happened / frame rejected
+ *   HNEC_REMOTE_OK          â€” event copied out (pending slot emptied)
+ *   HNEC_REMOTE_NO_NEW_EVENTâ€” nothing happened / frame rejected
  *                             (noise, checksum fail, foreign address,
- *                             unmapped code, discarded repeat — all
+ *                             unmapped code, discarded repeat â€” all
  *                             silent by design)
- *   HNEC_REMOTE_DISABLED    — source currently disabled
- *   HNEC_REMOTE_NULL_POINTER / _NOK — argument / init errors
+ *   HNEC_REMOTE_DISABLED    â€” source currently disabled
+ *   HNEC_REMOTE_NULL_POINTER / _NOK â€” argument / init errors
  * Single pending slot: poll faster than ~200 ms or events overwrite
  * (at the protocol's own rate that takes deliberate effort). */
 HNEC_REMOTE_EnumStatus_t HNEC_REMOTE_enumGetEvent(HNEC_REMOTE_Event_t *Copy_pstEvent);
 
 /* ---- Optional callback channel ---------------------------------------
- * If registered, invoked from INSIDE the service — THREAD context,
+ * If registered, invoked from INSIDE the service â€” THREAD context,
  * NEVER the ISR (the decode is ~68 ms). Timing: after decode, BEFORE
- * the quiet window — a slow callback simply extends the window.
+ * the quiet window â€” a slow callback simply extends the window.
  * The decoded event is stored to the pending slot EITHER WAY; the
  * callback and GetEvent are two views of the same event. Pick ONE
  * consumption pattern in the application (the callback is primarily
@@ -130,7 +130,7 @@ HNEC_REMOTE_EnumStatus_t HNEC_REMOTE_enumSetEventCallback(
         void (*Copy_pfCallback)(HNEC_REMOTE_Event_t));
 
 /* =====================================================================
- *  Usage example (boot order abbreviated — see the banner above):
+ *  Usage example (boot order abbreviated â€” see the banner above):
  *
  *      HNEC_REMOTE_enumInit();
  *      while (1)
@@ -149,7 +149,7 @@ HNEC_REMOTE_EnumStatus_t HNEC_REMOTE_enumSetEventCallback(
  *          /* ... rest of the super-loop ... * /
  *      }
  *
- *  Echo/debug builds additionally use HIR_enumGetLastRawFrame() —
+ *  Echo/debug builds additionally use HIR_enumGetLastRawFrame() â€”
  *  see HIR_interface.h (the layer that owns raw frames).
  * ===================================================================== */
 

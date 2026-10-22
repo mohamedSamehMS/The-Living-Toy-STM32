@@ -1,5 +1,5 @@
 /*
- * TTT_renderer.c — implementation of the Tic-Tac-Toe TFT contract.
+ * TTT_renderer.c â€” implementation of the Tic-Tac-Toe TFT contract.
  *  LOCATION: APP/ (flat).
  *
  *  HTFT surface used (complete list): FillRect, DrawHLine, DrawVLine,
@@ -16,7 +16,7 @@
 #include "APP/TTT_renderer.h"
 #include "APP/TTT_config.h"
 
-/* local aliases — config is the single source of truth */
+/* local aliases â€” config is the single source of truth */
 #define TTT_COLOR_BG        TTT_CFG_COLOR_BG
 #define TTT_COLOR_GRID      TTT_CFG_COLOR_GRID
 #define TTT_COLOR_X         TTT_CFG_COLOR_X
@@ -81,7 +81,7 @@ void TTT_voidPaintCell(u8 Copy_u8CellIdx, TTT_CellRole_t Copy_eRole)
         break;
 
     case TTT_CELL_X:
-    	/* FULL repaint: wipe the cell first — the painter must leave
+    	/* FULL repaint: wipe the cell first â€” the painter must leave
     	 * the cell in exactly this role's state regardless of prior
     	 * content. The cursor-ring erase path (MoveCursor) depends
     	 * on this completeness.                                      */
@@ -109,7 +109,7 @@ void TTT_voidPaintCell(u8 Copy_u8CellIdx, TTT_CellRole_t Copy_eRole)
         break;
 
     case TTT_CELL_O:
-    	/* same wipe — then the three concentric circles            */
+    	/* same wipe â€” then the three concentric circles            */
     	HTFT_voidFillRect((u16)(Local_u16Cx - 18u), (u16)(Local_u16Cy - 18u),
     			36u, 36u, TTT_COLOR_BG);
         for (Local_s8Offset = 0u; Local_s8Offset < (s8)TTT_CFG_O_STROKE_PX; Local_s8Offset++)
@@ -146,7 +146,7 @@ void TTT_voidPaintWinLine(u8 Copy_u8StartIdx, u8 Copy_u8EndIdx, u16 Copy_u16Colo
     if (Local_s32Dy > 0) { Local_u16Y0 = (u16)(Local_u16Y0 - 10u); Local_u16Y1 = (u16)(Local_u16Y1 + 10u); }
     else if (Local_s32Dy < 0) { Local_u16Y0 = (u16)(Local_u16Y0 + 10u); Local_u16Y1 = (u16)(Local_u16Y1 - 10u); }
 
-    /* UNIFORM BOLD STROKE — the fix for the thin-horizontal bug:
+    /* UNIFORM BOLD STROKE â€” the fix for the thin-horizontal bug:
      * draw passes offset in x AND passes offset in y.
      *   vertical lines   -> x-offsets are the real thickness
      *   horizontal lines -> y-offsets are the real thickness
@@ -169,7 +169,7 @@ void TTT_voidPaintWinLine(u8 Copy_u8StartIdx, u8 Copy_u8EndIdx, u16 Copy_u16Colo
 void TTT_voidPaintStatus(const char *Copy_chText, u16 Copy_u16Color)
 {
     /* opaque full-width overwrite: pad by drawing 16-char row. The
-     * string may be shorter — trailing area is background.          */
+     * string may be shorter â€” trailing area is background.          */
     char Local_chLine[17];
     u8 Local_u8I;
 
@@ -203,11 +203,11 @@ void TTT_voidPaintScores(u8 Copy_u8XWins, u8 Copy_u8OWins, u8 Copy_u8Draws)
 
 
 /* ------------------------------------------------------------------ *
- *  CURSOR (input integration) — yellow ring, 33x33 (odd size ->
+ *  CURSOR (input integration) â€” yellow ring, 33x33 (odd size ->
  *  pixel-centered on the cell center), inset inside the 36x36 clear
  *  area: 2-px clearance outside the largest piece geometry (O outer
  *  radius 14, X span ~13.5), so it never touches a piece.
- *  Erase = PaintCell(idx, role) — see the header contract.
+ *  Erase = PaintCell(idx, role) â€” see the header contract.
  * ------------------------------------------------------------------ */
 void TTT_voidPaintCursor(u8 Copy_u8CellIdx)
 {

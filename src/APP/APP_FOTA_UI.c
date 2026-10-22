@@ -1,5 +1,5 @@
 /*
- * APP_FOTA_UI.c � the FOTA update experience (the R5 buzzer wiring).
+ * APP_FOTA_UI.c - the FOTA update experience (the R5 buzzer wiring).
  *
  *  THE FOTA SEAT'S v1.0 DESIGN, PRESERVED: the layout, the stateless
  *  draw primitives, the pattern engine's rhythm (heartbeat during
@@ -8,7 +8,7 @@
  *  physics of the DO-NOT-POWER-OFF screens. Every screen coordinate
  *  and every string is theirs, verbatim.
  *
- *  THE WIRING (this revision � File 2 of the FOTA package): the
+ *  THE WIRING (this revision - File 2 of the FOTA package): the
  *  transducer primitive swaps. Their v1.0 drove an ACTIVE buzzer's
  *  GPIO pin on/off through UI_privateBeepSet; the owner has ruled the
  *  part is PASSIVE (bench-proven: distinct pitches through TIM10 PWM)
@@ -20,25 +20,25 @@
  *    success pair        80 ms  -> HBUZZER_enumToneStartTimed(MEDIUM, 1200, 80) x2
  *    attention pair      80 ms  -> the same 1200 pair (Available's chirp)
  *
- *  THE ARBITRATION (FOTA-33, formally superseded � the FOTA seat's
+ *  THE ARBITRATION (FOTA-33, formally superseded - the FOTA seat's
  *  registered approval): in-driver priority preemption replaces the
  *  call-site getter gate. FOTA's MEDIUM tones automatically suppress
- *  the input blip (LOW) inside HBUZZER � zero coupling; the tones ARE
+ *  the input blip (LOW) inside HBUZZER - zero coupling; the tones ARE
  *  the state signal. The UI's pattern engine needs NO arbitration
  *  knowledge: it fires tones; the driver arbitrates.
  *
  *  THE TIMED-TONE PROPERTY that makes the swap clean: every HBUZZER
- *  timed tone is fire-and-forget � it ENDS ITSELF by hardware (TIM10's
+ *  timed tone is fire-and-forget - it ENDS ITSELF by hardware (TIM10's
  *  two-phase teardown). The pattern engine's BeepSet(0) calls become
  *  no-ops (the tone already ended); its BeepSet(1) calls become tone
  *  starts. The engine's STATE MACHINERY (the on-windows, the burst
- *  count, the pacing) is preserved verbatim � it now paces tone STARTS
+ *  count, the pacing) is preserved verbatim - it now paces tone STARTS
  *  instead of pin levels, and the hardware ends each element exactly
  *  when the engine's window said it should.
  *
  *  THE BLOCKING-BEEP QUESTION (their v1.0 used SetBusyWait_ms in the
  *  success/attention pairs): on this tree the shim's calibrated loop
- *  serves it � pre-scheduler-safe, HUB-context-blocked ~80 ms with the
+ *  serves it - pre-scheduler-safe, HUB-context-blocked ~80 ms with the
  *  wire idle (their own documented safety condition: "the wire is idle
  *  at the DONE terminal"). Preserved as blocking, deliberately: the
  *  blocking pairs only fire at terminals, where their v1.0 analysis
@@ -47,8 +47,8 @@
  *  FONT LAW (theirs, unchanged): all strings uppercase, 0x20-0x5F.
  *
  *  Revision history:
- *    v1.0        � the FOTA seat's first delivery (patterns + active-GPIO stubs)
- *    R5-wiring   � THIS: the passive transducer swap onto HBUZZER (File 2 of 5)
+ *    v1.0        - the FOTA seat's first delivery (patterns + active-GPIO stubs)
+ *    R5-wiring   - THIS: the passive transducer swap onto HBUZZER (File 2 of 5)
  */
 
 #include "STD_TYPES.h"
@@ -89,8 +89,8 @@
 #define UI_FAIL_COUNT           6u   /* burst length (bounded)    */
 #define UI_OK_ON_MS             80u   /* success beep (x2, block) */
 
-/* ---- R5: THE TONE PALETTE (the countersigned �5.6 final form) ----
- * Frequencies: FOTA's �5.6 spec (750 progress / 2500 failure) + the
+/* ---- R5: THE TONE PALETTE (the countersigned -5.6 final form) ----
+ * Frequencies: FOTA's -5.6 spec (750 progress / 2500 failure) + the
  * success pair FOTA-61 completed the palette with (~1.2 kHz). All
  * MEDIUM priority: FOTA owns the buzzer during its ceremony; the
  * input blip (LOW) is suppressed by the driver's arbitration.        */
@@ -106,14 +106,14 @@ static u8  Global_u8BeepStep  = 0u;
 static u8  Global_u8LastPct   = 0xFFu;
 
 /* =====================================================================
- *  R5: THE TRANSDUCER PRIMITIVE � the swap's entire substance.
+ *  R5: THE TRANSDUCER PRIMITIVE - the swap's entire substance.
  *  The FOTA seat's UI_privateBeepSet(on) drove an ACTIVE buzzer's pin.
  *  The passive part + HBUZZER replace it: ON = a timed tone at the
  *  engine's chosen frequency for the engine's chosen duration (the
- *  tone ends ITSELF � hardware-timed); OFF = a no-op (a timed tone
+ *  tone ends ITSELF - hardware-timed); OFF = a no-op (a timed tone
  *  needs no explicit stop; only SUSTAINED tones do, and this engine
  *  never starts one). The HBUZZER status is ignored BY DESIGN: BUSY
- *  means a higher-priority tone owns the transducer � the arbitration
+ *  means a higher-priority tone owns the transducer - the arbitration
  *  working, not an error (FOTA-33's supersession, registered).
  * ===================================================================== */
 static void UI_privateBeepOn(u16 Copy_u16FreqHz, u32 Copy_u32OnMs)
@@ -123,16 +123,16 @@ static void UI_privateBeepOn(u16 Copy_u16FreqHz, u32 Copy_u32OnMs)
                                      (u16)Copy_u32OnMs);
 }
 
-/* the engine's OFF hook � a no-op for timed tones (kept so the engine's
+/* the engine's OFF hook - a no-op for timed tones (kept so the engine's
    state machinery stays verbatim; the calls remain, the pin does not) */
 static void UI_privateBeepOff(void)
 {
     /* Timed tones self-end: nothing to stop. (A SUSTAINED tone would
-       need HBUZZER_enumToneStop(MEDIUM) � this engine never starts one.) */
+       need HBUZZER_enumToneStop(MEDIUM) - this engine never starts one.) */
 }
 
 /* =====================================================================
- *  The blocking pair (terminals only � the wire-idle condition, the
+ *  The blocking pair (terminals only - the wire-idle condition, the
  *  FOTA seat's own documented safety analysis, preserved)
  * ===================================================================== */
 static void UI_privateBeepPair(u16 Copy_u16FreqHz, u32 Copy_u32OnMs)
@@ -146,7 +146,7 @@ static void UI_privateBeepPair(u16 Copy_u16FreqHz, u32 Copy_u32OnMs)
 
 void APP_FOTA_UI_voidInit(void)
 {
-    /* R5: RETIRED � the FOTA seat's buzzer-pin GPIO setup. HBUZZER owns
+    /* R5: RETIRED - the FOTA seat's buzzer-pin GPIO setup. HBUZZER owns
        the pin (PB8, TIM10_CH1); it was initialized at the hub's boot.
        This function now only resets the engine's state. */
     Global_u8BeepMode = 0u;
@@ -172,7 +172,7 @@ static void UI_privateCentered2x(const char *Copy_pch, u16 Copy_u16Y, u16 Copy_u
                           Copy_pch, Copy_u16Color, UI_COLOR_BG);
 }
 
-/* Fixed-width right-aligned "NNN%" � no ghosting (the value law) */
+/* Fixed-width right-aligned "NNN%" - no ghosting (the value law) */
 static void UI_privateDrawPercent(u8 Copy_u8Pct)
 {
     char Local_ach[5u];
@@ -219,13 +219,13 @@ void APP_FOTA_UI_Available(const char *Copy_pchVersion, u32 Copy_u32LengthBytes)
     UI_privateCentered1x(Local_ach, 84u, UI_COLOR_TEXT);
 
 
-    /* R5-FIX: the action prompt � the AUTO-mode design assumed the
+    /* R5-FIX: the action prompt - the AUTO-mode design assumed the
            orchestrator drew it; hub mode's user has no other affordance.
            CH = arm the confirm gate; 0 = leave (the offer stands).       */
     HTFT_voidDrawString(0u, 110u, "CH:START 0:BACK",
     		UI_COLOR_TEXT, UI_COLOR_BG);
 
-    /* R5: the attention pair � the ~1.2k success-family tone, blocking
+    /* R5: the attention pair - the ~1.2k success-family tone, blocking
        (the wire is idle: this is an offer screen, nothing is in flight) */
     UI_privateBeepPair(UI_TONE_OK_HZ, UI_OK_ON_MS);
 }
@@ -282,7 +282,7 @@ void APP_FOTA_UI_Success(void)
     UI_privateCentered1x("RESTARTING", 84u, UI_COLOR_TEXT);
     HTFT_voidDrawString(0u, UI_FOOT_Y, "DO NOT POWER OFF", UI_COLOR_TEXT, UI_COLOR_BG);
 
-    /* R5: the success pair (~1.2k, blocking � the wire is idle at the
+    /* R5: the success pair (~1.2k, blocking - the wire is idle at the
        DONE terminal; the FOTA seat's own safety analysis, preserved) */
     UI_privateBeepPair(UI_TONE_OK_HZ, UI_OK_ON_MS);
 }
@@ -298,11 +298,11 @@ void APP_FOTA_UI_Error(const char *Copy_pchWhat)
     UI_privateCentered2x("FAILED", UI_TITLE_Y, UI_COLOR_ERR);
     if (Copy_pchWhat != 0)
     {
-        /* R5-FIX 2: clamp to the screen � long reasons (18+ chars)
+        /* R5-FIX 2: clamp to the screen - long reasons (18+ chars)
            centered at 1x ran 144 px wide on the 128-px screen: the
            first and last characters clipped off BOTH edges ("NO..."
            "...LE"). <= 16 chars (128 px): center as designed; longer:
-           left-align and visibly truncate � the honest failure. */
+           left-align and visibly truncate - the honest failure. */
         u16 Local_u16Len = 0u;
         while (Copy_pchWhat[Local_u16Len] != '\0') { Local_u16Len++; }
         if (Local_u16Len <= 16u)
@@ -318,7 +318,7 @@ void APP_FOTA_UI_Error(const char *Copy_pchWhat)
 }
 
 /* =====================================================================
- *  The beep engine (the FOTA seat's, verbatim � the primitive swapped)
+ *  The beep engine (the FOTA seat's, verbatim - the primitive swapped)
  * ===================================================================== */
 void APP_FOTA_UI_voidPoll(void)
 {
@@ -334,7 +334,7 @@ void APP_FOTA_UI_voidPoll(void)
     {
         if ((Local_u32Now - Global_u32UntilMs) < 0x80000000u)
         {
-            return;                       /* still inside the ON window �
+            return;                       /* still inside the ON window -
                                            the timed tone is sounding; it
                                            ends itself at exactly this
                                            window's edge (hardware) */
@@ -359,7 +359,7 @@ void APP_FOTA_UI_voidPoll(void)
     {
         return;                           /* not yet time */
     }
-    /* R5: the element START � the frequency by mode (the palette) */
+    /* R5: the element START - the frequency by mode (the palette) */
     if (Global_u8BeepMode == 2u)
     {
         UI_privateBeepOn(UI_TONE_FAIL_HZ, UI_FAIL_ON_MS);
@@ -374,7 +374,7 @@ void APP_FOTA_UI_voidPoll(void)
 }
 
 /* =====================================================================
- *  BENCH ONLY � the smoke sequence (the FOTA seat's, the pair swapped)
+ *  BENCH ONLY - the smoke sequence (the FOTA seat's, the pair swapped)
  * ===================================================================== */
 #if APP_FOTA_UI_SMOKE_ENABLE
 void APP_FOTA_UI_voidSmoke(u8 Copy_u8Fail)

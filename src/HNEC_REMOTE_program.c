@@ -1,7 +1,7 @@
 /*
- * HNEC_REMOTE_program.c — NEC remote controller, IMPLEMENTATION
+ * HNEC_REMOTE_program.c â€” NEC remote controller, IMPLEMENTATION
  *
- *  Project 4 — Interactive Gaming Hub (ARM Embedded Systems Diploma)
+ *  Project 4 â€” Interactive Gaming Hub (ARM Embedded Systems Diploma)
  *  Target  : STM32F401CCU6 (WeAct Black Pill), register-level bare metal
  *  Layer   : HAL device layer -> HIR (HAL link layer) -> MCAL
  *
@@ -15,17 +15,17 @@
  *
  *  2. THE PAIR CONTRACT IS STRUCTURAL. HIR_enumDecodeFrame and
  *     HIR_enumCloseFrame are called from exactly one straight-line
- *     function (the service below) — every path through it closes
+ *     function (the service below) â€” every path through it closes
  *     the frame it opened. HIR's decode-open guard backstops this.
  *
  *  3. EVENT-LOSS IS SOMETIMES THE FEATURE. The full window after
  *     non-accepted frames is the swallow that enforces "one action
  *     per press" for discrete buttons and the initial delay for
  *     repeatable ones. Do not "fix" the loss without revisiting the
- *     repeat contract (config §2).
+ *     repeat contract (config Â§2).
  *
  *  4. SILENT REJECTION. Foreign addresses, unmapped codes, discarded
- *     repeats — no event, no status distinction. Downstream cannot
+ *     repeats â€” no event, no status distinction. Downstream cannot
  *     and should not tell noise from policy.
  *
  *  5. ISR-MINIMAL BY INHERITANCE. This driver registers no ISR of
@@ -49,7 +49,7 @@
  *  Compile-time consistency guards
  * ===================================================================== */
 
-/* The repeat mask is a u32 bit-per-enum-value — the enum must fit. */
+/* The repeat mask is a u32 bit-per-enum-value â€” the enum must fit. */
 _Static_assert(BTN_NONE < 32, "HNEC_REMOTE: VirtualButton_t exceeds the u32 repeat mask");
 
 /* =====================================================================
@@ -65,7 +65,7 @@ static u8 Global_u8Enabled     = 0u;
 static HNEC_REMOTE_Event_t Global_stPendingEvent = { BTN_NONE, 0u };
 static u8 Global_u8PendingValid = 0u;
 
-/* Last accepted button — what a decoded repeat frame refers to
+/* Last accepted button â€” what a decoded repeat frame refers to
  * (NEC repeats carry NO command data: "repeat whatever was last"). */
 static VirtualButton_t Global_udtLastAccepted = BTN_NONE;
 
@@ -79,7 +79,7 @@ static VirtualButton_t HNEC_REMOTE_privateLookupButton(u8 Copy_u8NecCmd)
 {
     u8 Local_u8Index;
 
-    /* Linear scan of 21 const rows at most once per ~110 ms — nothing
+    /* Linear scan of 21 const rows at most once per ~110 ms â€” nothing
      * to optimize. Unknown code -> BTN_NONE (silently no event). */
     for (Local_u8Index = 0u;
          Local_u8Index < (u8)HNEC_REMOTE_BUTTON_MAP_SIZE;
@@ -94,7 +94,7 @@ static VirtualButton_t HNEC_REMOTE_privateLookupButton(u8 Copy_u8NecCmd)
 }
 
 /* =====================================================================
- *  THE SERVICE (thread context — called from GetEvent only)
+ *  THE SERVICE (thread context â€” called from GetEvent only)
  * ===================================================================== */
 static void HNEC_REMOTE_privateService(void)
 {
@@ -102,7 +102,7 @@ static void HNEC_REMOTE_privateService(void)
     u8  Local_u8AcceptedRepeat = 0u;
     u32 Local_u32WindowMs;
 
-    /* Phase 1 — HIR's decode. NO_NEW_EVENT means idle: nothing owed,
+    /* Phase 1 â€” HIR's decode. NO_NEW_EVENT means idle: nothing owed,
      * nothing to close, return. Every other HIR status (disabled,
      * error) likewise leaves nothing owed. */
     if (HIR_enumDecodeFrame(&Local_stFrame) != HIR_OK)
@@ -110,10 +110,10 @@ static void HNEC_REMOTE_privateService(void)
         return;
     }
 
-    /* Phase 2 — policy (the whole reason this driver exists). */
+    /* Phase 2 â€” policy (the whole reason this driver exists). */
     if (Local_stFrame.Type == HIR_FRAME_DATA)
     {
-        /* Address filter (config §1 — honest scope documented there).
+        /* Address filter (config Â§1 â€” honest scope documented there).
          * Valid frame, wrong remote: silent rejection. */
         if (Local_stFrame.Addr == HNEC_REMOTE_EXPECTED_ADDRESS)
         {
@@ -134,13 +134,13 @@ static void HNEC_REMOTE_privateService(void)
                     Global_pfEventCallback(Global_stPendingEvent);
                 }
             }
-            /* else: valid frame, unmapped code — no event (silent). */
+            /* else: valid frame, unmapped code â€” no event (silent). */
         }
     }
     else if (Local_stFrame.Type == HIR_FRAME_REPEAT)
     {
         /* Repeats carry no data: they repeat the LAST ACCEPTED button.
-         * Emit only if that role is repeat-allowed (config §4). */
+         * Emit only if that role is repeat-allowed (config Â§4). */
         if ((Global_udtLastAccepted != BTN_NONE) &&
             ((HNEC_REMOTE_REPEAT_ALLOWED_MASK & (1UL << Global_udtLastAccepted)) != 0u))
         {
@@ -155,15 +155,15 @@ static void HNEC_REMOTE_privateService(void)
             }
         }
         /* else: repeat of a discrete-only button (or nothing ever
-         * accepted) — decoded, discarded, FULL window: the swallow
+         * accepted) â€” decoded, discarded, FULL window: the swallow
          * IS the "one action per press" enforcement (principle 3). */
     }
-    /* HIR_FRAME_INVALID: noise / corruption / stale service — no
+    /* HIR_FRAME_INVALID: noise / corruption / stale service â€” no
      * event, full window (noise rejection). */
 
-    /* Phase 3 — close the frame with the window the policy chose:
+    /* Phase 3 â€” close the frame with the window the policy chose:
      * short after an ACCEPTED repeat so the next 110 ms repeat frame
-     * flows (the auto-repeat rate contract, config §2); full after
+     * flows (the auto-repeat rate contract, config Â§2); full after
      * everything else. THE single CloseFrame call site (principle 2). */
     Local_u32WindowMs = (Local_u8AcceptedRepeat != 0u)
                         ? HNEC_REMOTE_REPEAT_QUIET_MS
@@ -177,7 +177,7 @@ static void HNEC_REMOTE_privateService(void)
 
 HNEC_REMOTE_EnumStatus_t HNEC_REMOTE_enumInit(void)
 {
-    /* Bring up the link layer (idempotent) — its MCAL prerequisites
+    /* Bring up the link layer (idempotent) â€” its MCAL prerequisites
      * must already have run (boot banner). A failure here is almost
      * always boot-order: clocks, MEXTI table, or SysTick. */
     if (HIR_enumInit() != HIR_OK)
@@ -255,7 +255,7 @@ HNEC_REMOTE_EnumStatus_t HNEC_REMOTE_enumGetEvent(HNEC_REMOTE_Event_t *Copy_pstE
 HNEC_REMOTE_EnumStatus_t HNEC_REMOTE_enumSetEventCallback(
         void (*Copy_pfCallback)(HNEC_REMOTE_Event_t))
 {
-    /* Not init-gated (register before init is fine — mirrors the
+    /* Not init-gated (register before init is fine â€” mirrors the
      * MSYSTICK SetTickCallback semantics: stored, fires once live).
      * NULL = unregister (library convention). Aligned store = atomic. */
     Global_pfEventCallback = Copy_pfCallback;

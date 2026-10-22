@@ -1,55 +1,55 @@
 /*
- * HUB_menu.c � THE GENERIC LIST ENGINE: one navigation FSM + one UI
+ * HUB_menu.c - THE GENERIC LIST ENGINE: one navigation FSM + one UI
  *  for every menu in the project. Menus are DATA.
  *  LOCATION: APP/ (flat).
  *
- *  THE INSIGHT THIS FILE EXISTS FOR: every hub screen is a list �
+ *  THE INSIGHT THIS FILE EXISTS FOR: every hub screen is a list -
  *  home, settings, leaderboard, game-over. One engine writes the
  *  behavior ONCE; each screen is a descriptor (strings + callbacks).
  *  Adding a menu = adding a struct of strings, not code.
  *
- *  NAVIGATION CONTRACT (Rev 3 � the KEYPAD CONVENTION, system-wide):
- *    2 / 8  � up / down. TWO sources, deliberately both live:
- *             the KEYPAD digits (single-step per press � digits are
+ *  NAVIGATION CONTRACT (Rev 3 - the KEYPAD CONVENTION, system-wide):
+ *    2 / 8  - up / down. TWO sources, deliberately both live:
+ *             the KEYPAD digits (single-step per press - digits are
  *             repeat-masked at the HNEC_REMOTE driver, so holding 8
  *             can never spin the list) and the D-PAD (PREV/NEXT,
- *             repeat-allowed � hold = glide). The dual navigation
+ *             repeat-allowed - hold = glide). The dual navigation
  *             map, TTT v1.2's proven pattern, now hub-wide.
- *    4 / 6  � left / right: NO-OP in vertical lists (they fall to
+ *    4 / 6  - left / right: NO-OP in vertical lists (they fall to
  *             default and are consumed). The axis exists for grid
- *             contexts � Math Quiz's on-screen keypad, Memory Match's
+ *             contexts - Math Quiz's on-screen keypad, Memory Match's
  *             card grid. Documented, not an error.
- *    CH     � CONFIRM: if OnRowConfirm is NULL the engine RETURNS
+ *    CH     - CONFIRM: if OnRowConfirm is NULL the engine RETURNS
  *             HUB_MENU_SELECTED with the row in Cursor (launch-style
  *             menus). If non-NULL, the callback fires and the engine
- *             STAYS (action rows � value cycling in Settings); the
+ *             STAYS (action rows - value cycling in Settings); the
  *             engine repaints so a changed value lands immediately.
  *             CONFIRM is repeat-masked at the driver: one action per
  *             press (the guard below is belt-and-braces).
- *    0      � BACK: always returns HUB_MENU_BACKED; the cursor
- *             position is preserved in Cursor � menus remember where
+ *    0      - BACK: always returns HUB_MENU_BACKED; the cursor
+ *             position is preserved in Cursor - menus remember where
  *             you were. Returning to the home menu lands you on the
  *             row you left from.
  *    Cursor movement CLAMPS at the ends (never wraps): a held D-pad
  *    parks on the last row instead of spinning through the list.
  *
  *  WHY THE MENU "FSM" IS ALMOST NOTHING: for a list, the input events
- *  ARE the transitions � UP/DOWN move the cursor, CONFIRM selects,
+ *  ARE the transitions - UP/DOWN move the cursor, CONFIRM selects,
  *  BACK exits. Only cursor arithmetic remains. (Games are the
- *  opposite � real FSMs with deadlines � which is exactly why game
+ *  opposite - real FSMs with deadlines - which is exactly why game
  *  logic stays distributed in Run modules while menus centralize here.)
  *
  *  COSTS: entry repaint = frame + N rows (N <= 8 rows of 1x text);
  *  cursor/value changes repaint only the affected row or two rows.
  *  Idle loop cost: one input poll + one ms read.
  *
- *  LIFETIME note: descriptors are MODIFIED (Cursor in/out) � they
+ *  LIFETIME note: descriptors are MODIFIED (Cursor in/out) - they
  *  live as statics in HUB_program.c, never on the stack.
  *
  *  Revision history:
- *    Rev 1 � original listing
- *    Rev 2 � documentation pass + PC13 heartbeat in the menu loop
- *    Rev 3 � keypad navigation (2/8) � the system-wide convention
+ *    Rev 1 - original listing
+ *    Rev 2 - documentation pass + PC13 heartbeat in the menu loop
+ *    Rev 3 - keypad navigation (2/8) - the system-wide convention
  *
  *  Created on: Sep 30, 2026
  */
@@ -121,7 +121,7 @@ HUB_MenuResult_t HUB_MENU_enumRun(HUB_Menu_t *Copy_pstMenu)
 
         /* Heartbeat (PC13, 500 ms): the hub's liveness channel. Runs
          * in every menu because the engine IS the hub loop here. It
-         * pauses during a game's Run (the game owns its loop � the
+         * pauses during a game's Run (the game owns its loop - the
          * documented trade) and resumes the moment Run returns.     */
         {
             static u32 Local_u32ShownHalf = 0u;
@@ -145,7 +145,7 @@ HUB_MenuResult_t HUB_MENU_enumRun(HUB_Menu_t *Copy_pstMenu)
             switch (Local_stEvt.Button)
             {
             case BTN_UP:
-            case BTN_NUM_2:      /* KEYPAD CONVENTION: 2 = up � single
+            case BTN_NUM_2:      /* KEYPAD CONVENTION: 2 = up - single
                                    step (digits are repeat-masked at the
                                    driver). The D-pad case keeps its
                                    glide (repeats ARE the scroll).      */
@@ -159,7 +159,7 @@ HUB_MenuResult_t HUB_MENU_enumRun(HUB_Menu_t *Copy_pstMenu)
 
             /* BTN_NUM_4 / BTN_NUM_6 (left/right) fall to default on
              * purpose: vertical lists have no horizontal axis. They
-             * are consumed here, not errors � the axis is live in
+             * are consumed here, not errors - the axis is live in
              * grid contexts (Math Quiz keypad, MM cards).            */
 
             case BTN_CONFIRM:

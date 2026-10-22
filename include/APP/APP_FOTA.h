@@ -1,24 +1,24 @@
 /*
- * APP_FOTA.h � FOTA receiver, application layer (FOTA seat, v2.1)
+ * APP_FOTA.h - FOTA receiver, application layer (FOTA seat, v2.1)
  *
  *  ONE TRANSPORT-AGNOSTIC CORE, TWO BINDINGS:
  *
- *  [BENCH] APP_FOTA_Init()/Run() � the v1 contract: the wire is
+ *  [BENCH] APP_FOTA_Init()/Run() - the v1 contract: the wire is
  *          APP_FOTA_BENCH_USART (config; default USART1), the
  *          fota_send.py wire protocol (text header + frames),
  *          console-style prints on the SAME wire, self-reset
  *          after OK STAGED. main.c V8 and the PC sender keep
- *          working without modification � the regression suite.
+ *          working without modification - the regression suite.
  *
  *  [NET]   The bracket seam (L1-REPLY-02/04 rulings):
  *          1. hub/NET sees EVENT_FOTA_AVAILABLE, decides
- *          2. APP_FOTA_enumPrepare() � erases staging NOW
+ *          2. APP_FOTA_enumPrepare() - erases staging NOW
  *             (~2.3 s core stall: runs in TEXT mode, before
  *             CMD_FOTA_BEGIN, so nothing is in flight)
  *          3. NET sends CMD_FOTA_BEGIN; on RESP_FOTA_READY:
  *             NET switches HESP to binary mode and calls
  *             APP_FOTA_enumBeginNet(version, length, e2e_crc,
- *             size_echo, raw_tx) � the receiver arms
+ *             size_echo, raw_tx) - the receiver arms
  *          4. HESP's raw router (loop context, before the
  *             assembler) feeds APP_FOTA_voidFeedByte(); ACK/NAK
  *             go out through the registered raw-TX function; NO
@@ -28,29 +28,29 @@
  *             completion the status becomes terminal
  *          6. NET closes binary mode, runs CMD_FOTA_DONE with
  *             APP_FOTA_pchGetStatusToken() (the REGISTERED set:
- *             OK / E2E_FAIL � ABORTED is the default; WATCHDOG
+ *             OK / E2E_FAIL - ABORTED is the default; WATCHDOG
  *             is NET's own token); on the DONE terminal +
  *             success it calls APP_FOTA_voidNetReset()
  *
- *  WIRE PROTOCOL v1.6 (frozen � FOTA-SPEC-1): 128-byte frames +
+ *  WIRE PROTOCOL v1.6 (frozen - FOTA-SPEC-1): 128-byte frames +
  *  4-byte big-endian CRC, ACK 0x06 / NAK 0x15, 0xAA resync,
  *  stop-and-wait. The negotiated-size field is carried by the
  *  bracket; this receiver supports 128 ONLY and returns a loud
  *  FOTA_STATUS_ERR_SIZE on any other echo (buffers grow the day
- *  a size is actually wanted � honest now).
+ *  a size is actually wanted - honest now).
  *
  *  Revision history:
- *    v2.1 � config file added (bench-wire + narration knobs);
+ *    v2.1 - config file added (bench-wire + narration knobs);
  *           DONE token map aligned to the registered set
  *           (L1-REPLY-02/FOTA-13); bench error lines restored
  *           to v1.7-exact strings (wire-compat).
- *    v2.0 � transport-agnostic refactor: net-mode API, v1 bench
+ *    v2.0 - transport-agnostic refactor: net-mode API, v1 bench
  *           API preserved, error paths become statuses.
- *    v1.7 � auto-reset after staging (bench mode keeps it).
- *    v1.6/1.5 � the proven receiver.
- *	  v2.2 � wire protocol v1.7: the sequence byte (FOTA-SPEC-2); duplicate re-ACK; DUP counter in the bench completion line.
+ *    v1.7 - auto-reset after staging (bench mode keeps it).
+ *    v1.6/1.5 - the proven receiver.
+ *	  v2.2 - wire protocol v1.7: the sequence byte (FOTA-SPEC-2); duplicate re-ACK; DUP counter in the bench completion line.
  *  Placement (app-layer 3-file convention): include/APP/ +
- *  src/APP/ � config (policy) / interface / implementation.
+ *  src/APP/ - config (policy) / interface / implementation.
  */
 
 #ifndef APP_FOTA_H_
@@ -88,7 +88,7 @@ void APP_FOTA_Run(void);    /* main-loop pump (bench binding)   */
 
 /* ===================== v2 NET MODE =========================== */
 
-/* Erase staging � call in TEXT mode, BEFORE NET sends
+/* Erase staging - call in TEXT mode, BEFORE NET sends
  * CMD_FOTA_BEGIN (the ~2.3 s stall must never meet traffic). */
 APP_FOTA_Status_t APP_FOTA_enumPrepare(void);
 
@@ -102,7 +102,7 @@ APP_FOTA_Status_t APP_FOTA_enumBeginNet(u32 Copy_u32Version,
 
 /* The raw-byte consumer. LOOP context (HESP router). ISR-safe
  * by construction (the bench binding exercises it from the
- * MUSART ISR) � the volatile discipline is kept for that path. */
+ * MUSART ISR) - the volatile discipline is kept for that path. */
 void APP_FOTA_voidFeedByte(u8 Copy_u8Data);
 
 /* Main-loop pump: process complete frames, finalize. */
@@ -114,7 +114,7 @@ u32 APP_FOTA_u32GetFramesDone(void);
 u32 APP_FOTA_u32GetFramesTotal(void);
 
 /* The amendment's DONE-transaction token for the current status
- * (single mapping point � NET builds the frame). */
+ * (single mapping point - NET builds the frame). */
 const char * APP_FOTA_pchGetStatusToken(void);
 
 /* NET calls this on the RESP_FOTA_DONE terminal after a

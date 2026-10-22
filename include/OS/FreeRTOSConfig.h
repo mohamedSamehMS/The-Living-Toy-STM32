@@ -1,14 +1,14 @@
 /*
- * FreeRTOSConfig.h — Project 4, the RTOS copy tree, Stage 1
+ * FreeRTOSConfig.h â€” Project 4, the RTOS copy tree, Stage 1
  *
  *  Target : STM32F401CCU6 (Cortex-M4), soft-float build
- *  Kernel : FreeRTOS V11.1.0, GCC/ARM_CM4F port — OWNER RULING: stays
+ *  Kernel : FreeRTOS V11.1.0, GCC/ARM_CM4F port â€” OWNER RULING: stays
  *           CM4F for the future FPU flip. Today's soft-float build
  *           runs it inert-but-correct (no FP instruction exists in
  *           this image, so the extended context path is never taken);
  *           flip-day is flags-only: -mfloat-abi=hard + rebuild, zero
  *           file changes.
- *  Clock  : consumed from MRCC's PUBLISHED MODEL — the 16->84 MHz
+ *  Clock  : consumed from MRCC's PUBLISHED MODEL â€” the 16->84 MHz
  *           flip recomputes the tick reload at compile time, one file
  *
  *  GROUND TRUTHS this config is built on (all verified this session):
@@ -17,7 +17,7 @@
  *      mask -> they NEVER call FromISR APIs (they don't); TIM4=4 /
  *      TIM5=5 sit at/below it -> FromISR-eligible at Stage 2
  *    - Handler symbols weak in system/src/cortexm/ExceptionHandlers.c:
- *      SVC_Handler / PendSV_Handler / SysTick_Handler — exact
+ *      SVC_Handler / PendSV_Handler / SysTick_Handler â€” exact
  *      spellings, overridable (the port's renames land on them)
  *    - MSYSTICK_program.c is EXCLUDED from this build; its API
  *      survives as src/MSYSTICK_shim.c
@@ -35,7 +35,7 @@
 
 #define configUSE_PREEMPTION                    1
 /* Irrelevant at Stage 1 (one task, no blocking) but already correct
-   for Stage 2 — the config never changes when decomposition begins. */
+   for Stage 2 â€” the config never changes when decomposition begins. */
 
 #define configCPU_CLOCK_HZ                      ( MRCC_HCLK_KHZ * 1000UL )
 
@@ -44,25 +44,25 @@
    no scaling, and every game deadline assumes it. */
 #define configTICK_RATE_HZ                      ( 1000UL )
 #if ( configTICK_RATE_HZ != 1000UL )
-#error "FreeRTOSConfig: tick rate must stay 1000 Hz — the GetElapsed_ms shim (xTaskGetTickCount) is 1:1 only at 1 kHz"
+#error "FreeRTOSConfig: tick rate must stay 1000 Hz - the GetElapsed_ms shim (xTaskGetTickCount) is 1:1 only at 1 kHz"
 #endif
 
 /* V11 tick width. (On a V10.5.x LTS kernel this would instead be
    configUSE_16_BIT_TICKS 0.) */
 #define configTICK_TYPE_WIDTH_IN_BITS           configTICK_TYPE_WIDTH_IN_BITS_32
 
-/* Idle(0) + 4 application levels — the Stage-2 ladder (Input > App >
+/* Idle(0) + 4 application levels â€” the Stage-2 ladder (Input > App >
    Comm > Persistence) fits with headroom. */
 #define configMAX_PRIORITIES                    5
 
 /* Idle task stack, WORDS (= 512 B). Idle is starved at Stage 1 (the
-   hub task never blocks) and does nothing here — no tickless, no
+   hub task never blocks) and does nothing here â€” no tickless, no
    hooks, no cleanup. */
 #define configMINIMAL_STACK_SIZE                ( ( unsigned short ) 128 )
 
 #define configMAX_TASK_NAME_LEN                 ( 8 )
 
-/* ===================== 2. Memory — heap_4 =====================
+/* ===================== 2. Memory â€” heap_4 =====================
  *  Budget arithmetic (64 KB SRAM, measured on the Gate D build):
  *  bss 2.2 KB + this heap 16 KB + hub stack 2 KB + idle 0.5 KB +
  *  TCB overhead ~= 21-22 KB committed, ~42 KB free. Refine the heap
@@ -74,13 +74,13 @@
 
 /* ===================== 3. Interrupt priorities ==================
  *  Raw register values (logical << 4, the F401's 4 implemented bits):
- *    kernel (SysTick/PendSV) = 15 << 4 = 240 — lowest; the SAME value
- *      MSYSTICK Rev 2 used to write — ownership transfers kernel-ward
+ *    kernel (SysTick/PendSV) = 15 << 4 = 240 â€” lowest; the SAME value
+ *      MSYSTICK Rev 2 used to write â€” ownership transfers kernel-ward
  *      with the same byte
- *    syscall mask (BASEPRI)  =  4 << 4 =  64 — everything at logical
+ *    syscall mask (BASEPRI)  =  4 << 4 =  64 â€” everything at logical
  *      priority >= 4 is masked in kernel critical sections and MAY
  *      call FromISR APIs; everything above (EXTI=1/DMA=2/USART=3) is
- *      never masked and must NEVER call them — true by construction
+ *      never masked and must NEVER call them â€” true by construction
  *      today (no ISR in this tree touches the kernel)
  * ===================== 3. Interrupt priorities ================== */
 #define configPRIO_BITS                         4
@@ -102,8 +102,8 @@ extern void vAssertCalled( const char * const pcFile, const int iLine );
 #define configCHECK_FOR_STACK_OVERFLOW          2
 
 /* NOTE (honest scope, Stage 1): method-2 checking runs on context
-   switches — a single never-blocking task switches exactly once (at
-   scheduler start). The high-water instrument lands at Stage 2 — the
+   switches â€” a single never-blocking task switches exactly once (at
+   scheduler start). The high-water instrument lands at Stage 2 â€” the
    hub loop is verbatim at Stage 1, so there is no insertion point
    without modifying app code; the 2 KB stack is deliberately generous
    meanwhile. */
@@ -146,7 +146,7 @@ extern void vAssertCalled( const char * const pcFile, const int iLine );
  *  Renames the port's handlers onto the vector-table symbols; strong
  *  beats the weak defaults in ExceptionHandlers.c. If
  *  MSYSTICK_program.c is NOT excluded, its strong SysTick_Handler
- *  collides — a deliberate, loud link error (the forgetting-detector).
+ *  collides â€” a deliberate, loud link error (the forgetting-detector).
  * ===================== 7. Kernel-exception wiring ===================== */
 #define vPortSVCHandler                         SVC_Handler
 #define xPortPendSVHandler                      PendSV_Handler

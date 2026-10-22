@@ -1,10 +1,10 @@
 /*
- * APP_INPUT.c � THE INPUT PUMP, Stage 2 edition.
+ * APP_INPUT.c - THE INPUT PUMP, Stage 2 edition.
  *
- *  LINEAGE: Phase 1 � a thin forwarder; the polling loop drove HNEC
- *  and stalled ~270 ms per press. Gate D � the capture engine killed
+ *  LINEAGE: Phase 1 - a thin forwarder; the polling loop drove HNEC
+ *  and stalled ~270 ms per press. Gate D - the capture engine killed
  *  the stall; still a forwarder, still driven by whoever polled.
- *  Stage 2 (this file) � the pump grows its own task: a producer
+ *  Stage 2 (this file) - the pump grows its own task: a producer
  *  (priority 3) drains HNEC every 10 ms into a queue; consumers read
  *  through the unchanged GetEvent signature.
  *
@@ -30,11 +30,11 @@ extern TaskHandle_t NET_xTaskHandle;
 /* ---- configuration ---- */
 #define APP_INPUT_QUEUE_DEPTH         8u    /* >1s of un-drained repeats: health margin */
 #define APP_INPUT_POLL_PERIOD_MS      10u   /* << NEC's ~110 ms cadence                   */
-#define APP_INPUT_CONSUMER_TIMEOUT_MS 2u    /* the pacing block � see the .h contract     */
+#define APP_INPUT_CONSUMER_TIMEOUT_MS 2u    /* the pacing block - see the .h contract     */
 #define APP_INPUT_ENABLE_STATS        1     /* the Stage-2 instrument (0 = off)           */
 #define APP_INPUT_STATS_PERIOD_MS     30000u
 
-/* Hub task handle � created in main.c, read ONLY by the stats line. */
+/* Hub task handle - created in main.c, read ONLY by the stats line. */
 extern TaskHandle_t App_xHubTaskHandle;
 
 static QueueHandle_t APP_INPUT_xEventQueue = NULL;
@@ -118,7 +118,7 @@ static void APP_INPUT_privateTask(void *pvParameters)
 
         /* Drain HNEC fully each wake (its pending slot is single):
            the HButtons slot goes HERE, before this loop, the day it
-           lands � the drain-order ruling, producer-side.            */
+           lands - the drain-order ruling, producer-side.            */
         HNEC_REMOTE_Event_t Local_stEvent;
         while (HNEC_REMOTE_enumGetEvent(&Local_stEvent) == HNEC_REMOTE_OK)
         {
@@ -167,7 +167,7 @@ APP_INPUT_EnumStatus_t APP_INPUT_enumInit(void)
     if (HBUTTONS_enumInit() != HBUTTONS_OK) { return APP_INPUT_INIT_FAILED; }
 
     /* 256 words = 512 B (HNEC drain + queue send + one print line);
-       priority 3 = INPUT, above the hub's 2 � the ladder's head.     */
+       priority 3 = INPUT, above the hub's 2 - the ladder's head.     */
     if (xTaskCreate(APP_INPUT_privateTask, "INPUT", 256u, NULL, 3u, NULL) != pdPASS)
     {
         return APP_INPUT_INIT_FAILED;
@@ -186,10 +186,10 @@ APP_INPUT_EnumStatus_t APP_INPUT_enumGetEvent(APP_INPUT_Event_t *Copy_pstEvent)
     if (xQueueReceive(APP_INPUT_xEventQueue, Copy_pstEvent,
                       pdMS_TO_TICKS(APP_INPUT_CONSUMER_TIMEOUT_MS)) == pdTRUE)
     {
-        /* Owner-ruled input feedback: one blip per FRESH press � repeats
+        /* Owner-ruled input feedback: one blip per FRESH press - repeats
          * are silent (a hold-glide blips once; the visual cursor carries
          * the glide). Arbitration is emergent: FOTA's MEDIUM tones
-         * preempt this LOW blip inside HBUZZER � no FOTA-state query.
+         * preempt this LOW blip inside HBUZZER - no FOTA-state query.
          * BUSY is the rule working; the status is ignored by design.  */
         if (Copy_pstEvent->IsRepeat == 0u)
         {
@@ -197,5 +197,5 @@ APP_INPUT_EnumStatus_t APP_INPUT_enumGetEvent(APP_INPUT_Event_t *Copy_pstEvent)
         }
         return APP_INPUT_OK;
     }
-    return APP_INPUT_NO_EVENT;       /* idle � the 2 ms pacing block */
+    return APP_INPUT_NO_EVENT;       /* idle - the 2 ms pacing block */
 }

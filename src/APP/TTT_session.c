@@ -1,15 +1,15 @@
 /*
- * TTT_session.c — the online session layer: the game's network
+ * TTT_session.c â€” the online session layer: the game's network
  *  intermediary over NET, and the owner of the NET STATES.
  *  LOCATION: APP/ (flat).
  *
- *  CHANGE SET K (previous revision): THE JOINER KEYBOARD —
+ *  CHANGE SET K (previous revision): THE JOINER KEYBOARD â€”
  *  2/8/4/6 navigate the 6x6 grid (wrapping); 5 snaps home; CH
  *  selects / submits at four chars; LEFT deletes; UP backs out.
- *  The grid is the SINGLE entry surface — alphabet-complete for
+ *  The grid is the SINGLE entry surface â€” alphabet-complete for
  *  any code the referee generates.
  *
- *  CHANGE SET B1 — THE TEARDOWN + THE RECOVERY, per the referee's
+ *  CHANGE SET B1 â€” THE TEARDOWN + THE RECOVERY, per the referee's
  *  consolidated spec (both-seat countersigned): the leave send-side
  *  on every local exit; the fifth site; the 5-key rewired; the
  *  ALREADY_IN_ROOM recovery; the LOBBY as the recovery context.
@@ -17,28 +17,28 @@
  *  STAGE 2 (M9-M14) and STAGE 1 (M1-M6) as previously registered.
  *  Provenance: pure moves from main.c v1.3 rev 5+fixes and the
  *  Stage-1 TTT_session.c; the K and B1 pieces marked. No HESP
- *  include — NET only.
+ *  include â€” NET only.
  *
- *  THE RTOS ABSORPTION (this revision — File 2 of 5). Three edits,
+ *  THE RTOS ABSORPTION (this revision â€” File 2 of 5). Three edits,
  *  each marked ABSORPTION EDIT at its site:
- *    EDIT 1 — the NET pump call removed from enumTask (the NET
+ *    EDIT 1 â€” the NET pump call removed from enumTask (the NET
  *      task owns the wire; this layer is a pure HUB-context
- *      consumer — which is where the TTS policy handlers MUST
+ *      consumer â€” which is where the TTS policy handlers MUST
  *      live, because they paint, and two tasks never draw on the
  *      write-only panel).
- *    EDIT 2 — the FOTA event family routed away at the consume
+ *    EDIT 2 â€” the FOTA event family routed away at the consume
  *      entry, counted (F-T2 resolved as routing; the floor that
  *      holds regardless of the wiring milestone's drain shape).
- *    EDIT 3 — enumInit restructured: session state only, per-
+ *    EDIT 3 â€” enumInit restructured: session state only, per-
  *      launch (the module calls it at Run() entry). The NET init
  *      and D15 live in NET's bring-up command now.
- *  ZERO FreeRTOS knowledge: no OS includes, no kernel calls — the
+ *  ZERO FreeRTOS knowledge: no OS includes, no kernel calls â€” the
  *  seam (NET's queues/task) did all the conversion work.
  */
 
 #include "STD_TYPES.h"
 
-#include <MCAL/SYSTICK/MSYSTICK_interface.h>   /* retry/message timestamps —
+#include <MCAL/SYSTICK/MSYSTICK_interface.h>   /* retry/message timestamps â€”
                                                   the shim serves these in the
                                                   HUB task, 1:1 with the old
                                                   GetElapsed_ms semantics     */
@@ -71,13 +71,13 @@ typedef struct
 
 #define TTS_CRED_MAGIC  0x54545332UL
 /* F-T1 (the absorption review): the fixed SRAM address is the
-   reset-survival mechanism — outside every linker section, so the
+   reset-survival mechanism â€” outside every linker section, so the
    C startup's .bss wipe never touches it; the credential outlives
    an MCU reset and RECONNECT-after-reset works. Safe by today's
    arithmetic (last 4 KB of SRAM, between .bss end and the MSP
    stack). PENDING: declare this region in the linker script
    (NOLOAD, named) so any future claim collides LOUDLY at link
-   time instead of silently at runtime — rides the absorption
+   time instead of silently at runtime â€” rides the absorption
    build's linker pass. */
 #define TTS_CRED_ADDR   ((volatile TTS_CredBlock_t *) 0x2000F000UL)
 
@@ -127,14 +127,14 @@ static void TTS_voidPaintKeyboard(void);
 static void TTS_voidMoveKbCursor(s8 Copy_s8Dr, s8 Copy_s8Dc);
 
 /* ---- init ----
- * ABSORPTION EDIT 3: the NET_enumInit call is GONE — the transport
+ * ABSORPTION EDIT 3: the NET_enumInit call is GONE â€” the transport
  * init and the D15 double emission live inside NET's bring-up
  * command now (the deferred link; executed at the online-mode
  * entry, never at boot). What remains is the session's OWN state,
- * reset fresh at every Run() entry (the module calls this — File 3
- * — because a game launch, not a boot, is the session's lifetime).
+ * reset fresh at every Run() entry (the module calls this â€” File 3
+ * â€” because a game launch, not a boot, is the session's lifetime).
  * Idempotent within a launch. (Also fixed in passing: the event-
- * drop counter now resets per-launch — the delivered code counted
+ * drop counter now resets per-launch â€” the delivered code counted
  * it per-boot only.) */
 TTS_EnumStatus_t TTT_SESSION_enumInit(void)
 {
@@ -156,12 +156,12 @@ TTS_EnumStatus_t TTT_SESSION_enumInit(void)
 }
 
 /* ---- task ----
- * ABSORPTION EDIT 1: the NET pump call is REMOVED — the NET task
+ * ABSORPTION EDIT 1: the NET pump call is REMOVED â€” the NET task
  * owns the wire now (spawned at boot; the pump, parse, timeout
  * sweep, and watchdog run in its context). What remains is the
- * DRAIN: the session's event consumption, running in HUB context —
+ * DRAIN: the session's event consumption, running in HUB context â€”
  * which is exactly where the TTS policy handlers must live (they
- * paint: GoHostWait, the status lines, the lobby redraw — two
+ * paint: GoHostWait, the status lines, the lobby redraw â€” two
  * tasks must never draw on the write-only panel). The signature,
  * the drain loop, and the consumers are unchanged. */
 TTS_EnumStatus_t TTT_SESSION_enumTask(void)
@@ -304,7 +304,7 @@ TTS_EnumStatus_t TTT_SESSION_enumRequestState(void)
 TTS_EnumStatus_t TTT_SESSION_enumLeaveRoom(void)
 {
     /* EAGER LOCAL INVALIDATION: the exit intent kills the
-       credential NOW — the lobby paints a moment later and must
+       credential NOW â€” the lobby paints a moment later and must
        not advertise a room we just chose to leave. The ack's M1
        site re-confirms (idempotent). The lost-ack edge stays
        recoverable: the create-bounce chase resumes the room
@@ -328,7 +328,7 @@ u8   TTT_SESSION_u8ConsumeNetFailExit(void)
 }
 
 /* ================================================================= *
- *  M10 — THE NET STATES' SCREENS                                     *
+ *  M10 â€” THE NET STATES' SCREENS                                     *
  * ================================================================= */
 
 void TTT_SESSION_voidEnterNetWait(u32 Copy_u32Now)
@@ -417,7 +417,7 @@ static void TTS_voidPaintEntrySlots(void)
 }
 
 /* ================================================================= *
- *  K — THE KEYBOARD PAINTERS                                         *
+ *  K â€” THE KEYBOARD PAINTERS                                         *
  * ================================================================= */
 
 static void TTS_voidPaintKeyCell(u8 Copy_u8Row, u8 Copy_u8Col, u8 Copy_u8Selected)
@@ -464,7 +464,7 @@ static void TTS_voidMoveKbCursor(s8 Copy_s8Dr, s8 Copy_s8Dc)
 }
 
 /* ================================================================= *
- *  M10 — THE NET STATES' LOOP HANDLER                                *
+ *  M10 â€” THE NET STATES' LOOP HANDLER                                *
  * ================================================================= */
 
 TTS_Request_t TTT_SESSION_enumRunNetState(u32 Copy_u32Now, u8 Copy_u8HaveIr,
@@ -503,10 +503,10 @@ TTS_Request_t TTT_SESSION_enumRunNetState(u32 Copy_u32Now, u8 Copy_u8HaveIr,
             else if ((Copy_eButton == BTN_NUM_5) &&
                      (TTT_SESSION_u8HasCredential() != 0u))
             { Global_u8NetBusy = 1u;
-              /* B1 / Rule 2: RECONNECT only on actual link-loss —
+              /* B1 / Rule 2: RECONNECT only on actual link-loss â€”
                  the socket is new server-side (NET_LOST->NET_BACK,
                  or the ESP rebooted: ESP_READY re-arrived). Connected
-                 and bound: never RECONNECT — Rule 3's GET_STATE; the
+                 and bound: never RECONNECT â€” Rule 3's GET_STATE; the
                  reply's status drives the screen (active -> resume,
                  waiting -> the code, finished -> the end screen,
                  NOT_READY -> the room is gone). */
@@ -538,13 +538,13 @@ TTS_Request_t TTT_SESSION_enumRunNetState(u32 Copy_u32Now, u8 Copy_u8HaveIr,
           (void)TTT_SESSION_enumRequestState(); }
         if ((Copy_u8HaveIr != 0u) && (Copy_eButton == BTN_BACK))
         { Global_u8OnlineMode = 0u;
-          (void)TTT_SESSION_enumLeaveRoom();      /* B1: the waiting arm —
+          (void)TTT_SESSION_enumLeaveRoom();      /* B1: the waiting arm â€”
                                                       the silent dissolve */
           TTT_SESSION_voidGoLobby(); }
         break;
 
     case GAME_ST_JOIN_ENTRY:
-        /* the retry ladder — verbatim; the input is the keyboard */
+        /* the retry ladder â€” verbatim; the input is the keyboard */
         if ((Global_u8RetryCmd == 2u) &&
             ((Copy_u32Now - Global_u32RetryT0) >= TTT_ONLINE_RETRY_MS))
         {
@@ -564,7 +564,7 @@ TTS_Request_t TTT_SESSION_enumRunNetState(u32 Copy_u32Now, u8 Copy_u8HaveIr,
             case BTN_NUM_4:  TTS_voidMoveKbCursor( 0, -1); break;
             case BTN_NUM_6:  TTS_voidMoveKbCursor( 0,  1); break;
 
-            case BTN_NUM_5:   /* home — the board's 5-to-center mirror */
+            case BTN_NUM_5:   /* home â€” the board's 5-to-center mirror */
             {
                 u8 Local_u8OldR = Global_u8KbRow;
                 u8 Local_u8OldC = Global_u8KbCol;
@@ -574,7 +574,7 @@ TTS_Request_t TTT_SESSION_enumRunNetState(u32 Copy_u32Now, u8 Copy_u8HaveIr,
             }
             break;
 
-            case BTN_LEFT:   /* delete — verbatim */
+            case BTN_LEFT:   /* delete â€” verbatim */
             { if (Global_u8EntryLen > 0u)
               { Global_chEntry[--Global_u8EntryLen] = '\0'; } }
             break;
@@ -587,7 +587,7 @@ TTS_Request_t TTT_SESSION_enumRunNetState(u32 Copy_u32Now, u8 Copy_u8HaveIr,
                 if (Global_u8EntryLen < 4u)
                 { Global_chEntry[Global_u8EntryLen++] =
                         TTS_achKeys[(Global_u8KbRow * TTS_KB_COLS) + Global_u8KbCol]; }
-                else   /* four chars in — CONFIRM submits */
+                else   /* four chars in â€” CONFIRM submits */
                 { Global_chEntry[4] = '\0';
                   Global_u32NetT0 = Copy_u32Now;
                   (void)TTT_SESSION_enumJoin(Global_chEntry);
@@ -614,7 +614,7 @@ TTS_Request_t TTT_SESSION_enumRunNetState(u32 Copy_u32Now, u8 Copy_u8HaveIr,
 }
 
 /* ================================================================= *
- *  M11 + B1 — THE CONSUMER: the M1 sites, the policy half, and the   *
+ *  M11 + B1 â€” THE CONSUMER: the M1 sites, the policy half, and the   *
  *  recovery (the ALREADY_IN_ROOM chase, the LOBBY outcomes)          *
  * ================================================================= */
 
@@ -624,7 +624,7 @@ static void TTS_voidConsumeNetEvent(const NET_Event_t *Copy_pstNet)
     u8 i;
 
     /* ABSORPTION EDIT 2 (F-T2 resolved as routing): the FOTA family
-     * is DROPPED here, counted — the TTS enum has no corresponding
+     * is DROPPED here, counted â€” the TTS enum has no corresponding
      * values (the byte-copy would translate them into out-of-range
      * junk that forwards to the game). The FOTA wiring milestone's
      * drain routes these events to the orchestrator BEFORE the
@@ -669,7 +669,7 @@ static void TTS_voidConsumeNetEvent(const NET_Event_t *Copy_pstNet)
         break;
 
     case TTS_EVT_ROOM_LEFT:
-        /* B1: the leave's terminal — the binding is freed; the
+        /* B1: the leave's terminal â€” the binding is freed; the
            credential dies with the room. */
         TTT_SESSION_voidInvalidateCredential();
         break;
@@ -699,12 +699,12 @@ static void TTS_voidConsumeNetEvent(const NET_Event_t *Copy_pstNet)
             Global_u8EntryMsg = 1u;
             return;
         }
-        break;   /* forward — the game handles its own states */
+        break;   /* forward â€” the game handles its own states */
 
     case TTS_EVT_RESP_ERR:
         Global_u8NetBusy = 0u;
         /* B1 (Q3-confirmed): the ALREADY_IN_ROOM recovery, ANY
-           context — the state chase. The reply's status drives the
+           context â€” the state chase. The reply's status drives the
            screen (waiting -> host-wait; active -> the game;
            finished -> the end screen). Also self-heals a fast
            create racing the leave's ack. Consumed: the STATE event
@@ -740,10 +740,10 @@ static void TTS_voidConsumeNetEvent(const NET_Event_t *Copy_pstNet)
         }
         else if (Game_eState == GAME_ST_LOBBY)
         {
-        	/* B1: the lobby is the recovery context — the 5's and
+        	/* B1: the lobby is the recovery context â€” the 5's and
                        the leave's answers land here. NOT_READY = unbound,
-                       the room is gone (the chase's "free" outcome — an
-                       answer, not an error). TIMEOUT = an uncertain leave —
+                       the room is gone (the chase's "free" outcome â€” an
+                       answer, not an error). TIMEOUT = an uncertain leave â€”
                        Rule 3's chase settles it (the lost-ack edge). */
         	if (TTS_u8StrEq(Local_stTts.Reason, "NOT_READY"))
         	{ TTT_SESSION_voidInvalidateCredential();
@@ -753,7 +753,7 @@ static void TTS_voidConsumeNetEvent(const NET_Event_t *Copy_pstNet)
         	(void)TTT_SESSION_enumRequestState(); }
         	return;
         }
-        break;   /* forward — the game's play-context "NET ERROR" */
+        break;   /* forward â€” the game's play-context "NET ERROR" */
 
     case TTS_EVT_CMD_TIMEOUT:
             if (Game_eState == GAME_ST_NET_WAIT)

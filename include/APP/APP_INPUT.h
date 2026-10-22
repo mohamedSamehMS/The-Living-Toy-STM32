@@ -1,26 +1,26 @@
 /*
- * APP_INPUT.h — the ONE input stream every screen and game drinks
+ * APP_INPUT.h â€” the ONE input stream every screen and game drinks
  *  from. The merge pump.
  *  LOCATION: APP/ (flat).
  *
  *  STAGE 2 CONTRACT (this revision): the pump owns a PRODUCER task
  *  (priority 3) that drains HNEC every 10 ms and posts events to a
- *  FreeRTOS queue (depth 8, by value). The consumer side — every
- *  menu and game — is UNCHANGED: same function, same types.
+ *  FreeRTOS queue (depth 8, by value). The consumer side â€” every
+ *  menu and game â€” is UNCHANGED: same function, same types.
  *
  *  TIMING: GetEvent returns one event or none, blocking at most
  *  ~2 ms when idle (a queue receive with timeout). The Phase-1
  *  contract was a ~270 ms stall per press; every consumer in the
- *  tree was written stall-tolerant for THAT — 2 ms is invisible.
+ *  tree was written stall-tolerant for THAT â€” 2 ms is invisible.
  *  Side effect (good): consumer loops pace at ~500 Hz instead of
  *  spinning, and the idle task runs between iterations.
  *
  *  INPUT LATENCY: fresh press <= ~78 ms (frame duration + one poll
- *  period); events BUFFER through long paints — a press during a
+ *  period); events BUFFER through long paints â€” a press during a
  *  45 ms repaint is queued, not lost or serviced late.
  *
  *  THE DRAIN-ORDER RULING (preserved, producer-side): when HButtons
- *  lands, its polling joins the input task BEFORE the HNEC drain —
+ *  lands, its polling joins the input task BEFORE the HNEC drain â€”
  *  the physical button still "wins" the same frame. Only the .c
  *  changes that day (still true).
  */

@@ -1,11 +1,11 @@
 /*
- * HTFT_font.h — hand-drawn 6x7 glyph set in 8x8 cells
+ * HTFT_font.h â€” hand-drawn 6x7 glyph set in 8x8 cells
  *
  *  INTERNAL to the driver: included ONLY by HTFT_program.c (the table
  *  is 'static', so including it from a second .c file would silently
- *  duplicate 512 bytes of flash there — don't).
+ *  duplicate 512 bytes of flash there â€” don't).
  *
- *  ENCODING — one glyph = 8 bytes, one byte per cell row, top to
+ *  ENCODING â€” one glyph = 8 bytes, one byte per cell row, top to
  *  bottom. Within each byte:
  *
  *        bit:   7   6   5   4   3   2  |  1   0
@@ -14,18 +14,18 @@
  *
  *      - bit 7 is the LEFTMOST pixel of the cell, bit 2 the rightmost
  *        of the 6-px glyph area (see any glyph: it reads like ASCII art
- *        in the source — that is the whole point of binary literals).
+ *        in the source â€” that is the whole point of binary literals).
  *      - bits 1..0 are the 2-px inter-character gap, always zero.
  *      - bytes 0..6 = the 7 glyph rows; byte 7 = 1-px line spacing,
- *        always zero. (Every entry has exactly 8 bytes — a 7-byte entry
+ *        always zero. (Every entry has exactly 8 bytes â€” a 7-byte entry
  *        compiles due to zero-fill, but is a latent trap if a glyph
  *        ever gains a non-zero 8th row.)
  *
- *  COVERAGE: 0x20..0x5F — space, punctuation, digits, all uppercase.
+ *  COVERAGE: 0x20..0x5F â€” space, punctuation, digits, all uppercase.
  *  Index directly: HTFT_AU8Font[c - 0x20]. Unlisted entries are zero
  *  (render as blank cells).
  *
- *  EDITING: any glyph can be fixed by eye — read its rows as pixels,
+ *  EDITING: any glyph can be fixed by eye â€” read its rows as pixels,
  *  change the bits, reflash. '%' was added exactly this way after the
  *  core set proved out.
  *
@@ -33,7 +33,7 @@
  *  128 bytes of flash) and add entries like [ 'a' - 0x20 ] = { ... }.
  *  HTFT_voidDrawChar's 0x5F range check must widen to match.
  *
- *  Footprint: 64 entries x 8 bytes = 512 bytes of flash (.rodata —
+ *  Footprint: 64 entries x 8 bytes = 512 bytes of flash (.rodata â€”
  *  'const'), zero RAM.
  */
 

@@ -10,7 +10,7 @@
  *  1. VALIDATE FIRST, UNLOCK LAST. Parameters, the writable-window
  *     policy, alignment, and the erased-state of the target words
  *     are ALL checked BEFORE the KEYR sequence runs. A rejected call
- *     leaves the controller locked and the flash untouched — there
+ *     leaves the controller locked and the flash untouched â€” there
  *     is no partially-applied operation.
  *
  *  2. THE WRITABLE WINDOW IS A BUILD FACT, NOT A CONVENTION.
@@ -21,22 +21,22 @@
  *  3. POLLING ONLY, SYSTICK NEVER. The waits are bounded loop
  *     counters derived from the MRCC published clock model. Two
  *     reasons: the bootloader runs before any SysTick exists, and a
- *     SysTick-based timeout hangs when SysTick is not initialized —
+ *     SysTick-based timeout hangs when SysTick is not initialized â€”
  *     the MSPI bug class, avoided here by construction.
  *
  *  4. STATUS HYGIENE. Stale SR flags are cleared BEFORE every
  *     operation (an uncleared WRPERR from a previous failure would
- *     leak into this operation's result) and again after — errors
+ *     leak into this operation's result) and again after â€” errors
  *     are reported once, loudly, then cleared.
  *
  *  5. LOCK DISCIPLINE. Keys are written only after reading
  *     LOCK == 1, only in the exact KEY1/KEY2 order, verified by
- *     read-back (a wrong key locks the controller until reset —
+ *     read-back (a wrong key locks the controller until reset â€”
  *     reported as MFLS_LOCKED, never ignored). Every public function
  *     re-locks the controller before returning.
  *
  *  Revision history:
- *    Rev 1 — initial four-file set (FOTA seat)
+ *    Rev 1 â€” initial four-file set (FOTA seat)
  *
  *  Created on: (set on first commit)
  *      Author: Mohamed Sameh (drafted with the FOTA Seat AI session)
@@ -54,7 +54,7 @@
  *  Compile-time consistency guards
  *
  *  The sector table is the ground truth every FOTA region derives
- *  from — a typo in one base address would be catastrophic AND
+ *  from â€” a typo in one base address would be catastrophic AND
  *  silent. The adjacency chain below turns any inconsistency into a
  *  BUILD BREAK: each sector must begin exactly where the previous
  *  ends, and the map must cover exactly 256 KB ending at 0x08040000.
@@ -69,7 +69,7 @@ _Static_assert(MFLS_SECTOR_BASE_5 + MFLS_SECTOR_SIZE_5 == 0x08040000UL, "sector 
 _Static_assert(MFLS_SECTOR_4 == 4 && MFLS_SECTOR_5 == 5, "sector enum must equal table index");
 
 /* =====================================================================
- *  Private lookup table — sector id -> base/size
+ *  Private lookup table â€” sector id -> base/size
  *  Designated initializers (MGPIO pattern): a missing entry breaks
  *  the build instead of indexing past the array.
  * ===================================================================== */
@@ -84,7 +84,7 @@ static const MFLS_SectorInfo_t MFLS_AstSectors[MFLS_SECTOR_COUNT] =
 };
 
 /* Raw FLASH_SR captured by MFLS_privateClearStatus immediately BEFORE
-   its W1C clear — the flags the most recently COMPLETED operation left.
+   its W1C clear â€” the flags the most recently COMPLETED operation left.
    Read it right after an MFLS call returns (the next call's pre-clear
    overwrites it). Bench-diagnostics aid. */
 static u32 MFLS_u32LastStatusSnapshot = 0u;
@@ -98,7 +98,7 @@ static u32 MFLS_u32LastStatusSnapshot = 0u;
    verified by read-back. */
 static MFLS_ReturnType_t MFLS_privateUnlock(void);
 
-/* SET_BIT(CR, LOCK) — the controller never stays unlocked between
+/* SET_BIT(CR, LOCK) â€” the controller never stays unlocked between
    public calls. */
 static void MFLS_privateLock(void);
 
@@ -122,7 +122,7 @@ static MFLS_ReturnType_t MFLS_privateValidateWritableSector(MFLS_Sector_t Copy_S
 
 static MFLS_ReturnType_t MFLS_privateValidateWritableSector(MFLS_Sector_t Copy_Sector)
 {
-    /* (u32) cast BEFORE the comparison — C enums are not type-safe
+    /* (u32) cast BEFORE the comparison â€” C enums are not type-safe
        (MGPIO pattern): garbage that passes a signed test fails here. */
     if ((u32)Copy_Sector > (u32)MFLS_SECTOR_5)
     {
@@ -158,7 +158,7 @@ static MFLS_ReturnType_t MFLS_privateAddressToSector(u32 Copy_u32Address,
         }
     }
 
-    return MFLS_INVALID_ADDRESS;   /* unreachable — the adjacency
+    return MFLS_INVALID_ADDRESS;   /* unreachable â€” the adjacency
                                       _Static_asserts pin the table */
 }
 
@@ -193,10 +193,10 @@ static MFLS_ReturnType_t MFLS_privateWaitNotBusy(void)
 {
     u32 Local_u32Timeout = MFLS_TIMEOUT_COUNT;
 
-    /* SR is volatile — re-read every iteration. During a legitimate
+    /* SR is volatile â€” re-read every iteration. During a legitimate
        erase the FLASH-RESIDENT loop body is itself stalled with the
        rest of the code (single bank), so this bound guards
-       post-operation pathological states — generous by construction
+       post-operation pathological states â€” generous by construction
        (see the derivation in MFLS_config.h). */
     while (GET_BIT(MFLS_FLASH->SR, MFLS_SR_BSY) != 0u)
     {
@@ -254,12 +254,12 @@ MFLS_ReturnType_t MFLS_EraseSector(MFLS_Sector_t Copy_Sector)
         return Local_ReturnStatus;
     }
 
-    /* 4. Clear stale status — this operation reports only its own
+    /* 4. Clear stale status â€” this operation reports only its own
           outcome. */
     (void)MFLS_privateClearStatus();
 
     /* 5. Arm the erase: SER + SNB. SNB is only writable while
-          BSY == 0 — guaranteed by step 2. Masked field write, never
+          BSY == 0 â€” guaranteed by step 2. Masked field write, never
           a blind RMW: untouched bits keep their values. */
     MFLS_FLASH->CR = (MFLS_FLASH->CR & ~MFLS_CR_SNB_MASK)
                    | (((u32)Copy_Sector << MFLS_CR_SNB) & MFLS_CR_SNB_MASK)
@@ -267,7 +267,7 @@ MFLS_ReturnType_t MFLS_EraseSector(MFLS_Sector_t Copy_Sector)
 
     /* 6. START. The erase runs to completion with no CPU help. From
           this store until BSY clears, every flash-resident code
-          fetch STALLS — including this very polling loop. The board
+          fetch STALLS â€” including this very polling loop. The board
           freezes for the erase duration: expected, by design (the
           stall contract in the interface header). */
     SET_BIT(MFLS_FLASH->CR, MFLS_CR_STRT);
@@ -278,24 +278,24 @@ MFLS_ReturnType_t MFLS_EraseSector(MFLS_Sector_t Copy_Sector)
     if (Local_ReturnStatus == MFLS_OK)
     {
         /* 8. Completion criterion (Rev 3): BSY cleared + no error
-              flag set. EOP is NOT required — BENCH FINDING (runs
+              flag set. EOP is NOT required â€” BENCH FINDING (runs
               1-2, V2 harness, recorded in the revision history):
-              on this part EOP never asserts in polled mode — SR
+              on this part EOP never asserts in polled mode â€” SR
               read 0x00000000 after BOTH a verified-correct sector
               erase AND verified-correct word programming. ST's own
               F4 busy-poll path also trusts BSY + error flags only.
               The EOP bit stays in the W1C clear mask inside
-              MFLS_privateClearStatus — harmless if it ever does
+              MFLS_privateClearStatus â€” harmless if it ever does
               assert (e.g. a future EOPIE-enabled variant). */
         Local_ReturnStatus = MFLS_privateClearStatus();
     }
     else
     {
-        /* Timeout path: clear flags too — they may explain the hang. */
+        /* Timeout path: clear flags too â€” they may explain the hang. */
         (void)MFLS_privateClearStatus();
     }
 
-    /* 9. Disarm SER — leave CR as we found it, apart from LOCK. */
+    /* 9. Disarm SER â€” leave CR as we found it, apart from LOCK. */
     CLR_BIT(MFLS_FLASH->CR, MFLS_CR_SER);
 
     /* 10. Always relock before returning (principle 5). */
@@ -318,7 +318,7 @@ MFLS_ReturnType_t MFLS_ProgramWords(u32 Copy_u32Address,
     u32               Local_u32LastAddress;
     u32               Local_u32Index;
 
-    /* ---- 1. Parameter validation — nothing touched yet ---- */
+    /* ---- 1. Parameter validation â€” nothing touched yet ---- */
     if (Copy_pu32Data == NULL)
     {
         return MFLS_INVALID_PARAM;
@@ -329,7 +329,7 @@ MFLS_ReturnType_t MFLS_ProgramWords(u32 Copy_u32Address,
     }
     if ((Copy_u32Address & 0x3u) != 0u)
     {
-        /* x32 programming requires word alignment — hardware would
+        /* x32 programming requires word alignment â€” hardware would
            raise PGAERR; refuse first, loudly (validate-first rule). */
         return MFLS_INVALID_PARAM;
     }
@@ -346,7 +346,7 @@ MFLS_ReturnType_t MFLS_ProgramWords(u32 Copy_u32Address,
         return MFLS_INVALID_ADDRESS;
     }
 
-    /* ---- 2. Writable-window policy — first AND last sector ---- */
+    /* ---- 2. Writable-window policy â€” first AND last sector ---- */
     Local_ReturnStatus = MFLS_privateAddressToSector(Copy_u32Address, &Local_FirstSector);
     if (Local_ReturnStatus != MFLS_OK)
     {
@@ -408,7 +408,7 @@ MFLS_ReturnType_t MFLS_ProgramWords(u32 Copy_u32Address,
          Local_u32Index++)
     {
         /* The store itself starts the programming cycle (BSY sets on
-           the write). Expect a short core stall per word — flash
+           the write). Expect a short core stall per word â€” flash
            instruction fetches wait for the program cycle to end. */
         Local_pu32Target[Local_u32Index] = Copy_pu32Data[Local_u32Index];
 

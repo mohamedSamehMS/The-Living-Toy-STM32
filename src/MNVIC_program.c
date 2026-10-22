@@ -3,38 +3,38 @@
  *
  *  Implementation of the MNVIC driver.
  *
- *  Reference: ARM PM0214 §4.3 (NVIC), §4.2 (SCB/AIRCR)
+ *  Reference: ARM PM0214 Â§4.3 (NVIC), Â§4.2 (SCB/AIRCR)
  *
  *  DESIGN PRINCIPLES (documented, deliberate):
  *
  *  1. COMPILE-TIME GROUPING. The old runtime static (initialized to
- *     0 — an invalid case of the grouping switch) made every
+ *     0 â€” an invalid case of the grouping switch) made every
  *     SetGroupPriority call before SetGroupsConfig a SILENT NO-OP,
- *     leaving the IRQ at reset priority 0 = the HIGHEST priority —
+ *     leaving the IRQ at reset priority 0 = the HIGHEST priority â€”
  *     the exact opposite of the caller's intent. Grouping now lives
  *     in MNVIC_config.h; the priority-encoding formula is constant.
  *
  *  2. VALIDATE FIRST, WRITE LAST. Every IRQ position is checked
  *     against the vector-table-derived validity mask (29 of 85
  *     positions are family holes); every priority value is checked
- *     against the grouping's field width — an out-of-range value
+ *     against the grouping's field width â€” an out-of-range value
  *     used to silently truncate toward priority 0 (most urgent).
  *     Either the whole operation lands, or a status returns.
  *
  *  3. W1S/W1C DISCIPLINE. ISER/ICER/ISPR/ICPR/STIR are written with
- *     direct single-word stores of the one-hot bit — the
+ *     direct single-word stores of the one-hot bit â€” the
  *     architectural idiom for write-1-to-* registers. No RMW, no
  *     implied register state.
  *
  *  4. AIRCR GETS THE WRITE-KEY TREATMENT. VECTKEY reads as 0xFA05
- *     but must be written as 0x05FA — a naive RMW writes the wrong
+ *     but must be written as 0x05FA â€” a naive RMW writes the wrong
  *     key and the whole register write is silently ignored. The
  *     mask-then-OR pattern plus a PRIGROUP read-back converts that
  *     silent failure into MNVIC_INIT_FAILED.
  *
  *  Revision history:
- *    Rev 1 — original
- *    Rev 2 — this rewrite: typed IRQ enum, validity mask, compile-
+ *    Rev 1 â€” original
+ *    Rev 2 â€” this rewrite: typed IRQ enum, validity mask, compile-
  *            time grouping, status returns, Get TriggerIRQ added
  *
  *  Created on: Aug 1, 2026
@@ -64,7 +64,7 @@ _Static_assert(MNVIC_TIM1_UP_TIM10 == 25, "vector layout: TIM1_UP/TIM10 shared p
 
 /* The single priority-encoding formula must reproduce all five
    hand-derived encodings of the old five-case switch (group shift
-   = 1 + PRIGROUP, sub shift = 4 — for every legal grouping): */
+   = 1 + PRIGROUP, sub shift = 4 â€” for every legal grouping): */
 _Static_assert((1u + MNVIC_PRIGROUP_16_0) == 4u, "16/0 encoding: group shift must be 4");
 _Static_assert((1u + MNVIC_PRIGROUP_8_2)  == 5u, "8/2  encoding: group shift must be 5");
 _Static_assert((1u + MNVIC_PRIGROUP_4_4)  == 6u, "4/4  encoding: group shift must be 6");
@@ -75,7 +75,7 @@ _Static_assert((1u + MNVIC_PRIGROUP_1_16) == 8u, "1/16 encoding: group field is 
  *  Module state
  * ===================================================================== */
 
-/* Set by Init — gates SetPriority only (the ONE function whose
+/* Set by Init â€” gates SetPriority only (the ONE function whose
    correctness depends on AIRCR.PRIGROUP actually being programmed:
    before Init, the hardware grouping is the reset default, which
    may not match the config's encoding split). Enable/pending/
@@ -84,7 +84,7 @@ _Static_assert((1u + MNVIC_PRIGROUP_1_16) == 8u, "1/16 encoding: group field is 
 static u8 Global_u8IsInitialized = 0;
 
 /* =====================================================================
- *  IRQ validity mask — derived from the startup vector table
+ *  IRQ validity mask â€” derived from the startup vector table
  *
  *  Bit N set = position N is a real F401 interrupt. The 29 holes
  *  (family slots for peripherals the F401 lacks) are masked off, so
@@ -103,13 +103,13 @@ static const u32 MNVIC_ValidIrqMask[3] =
 };
 
 /* =====================================================================
- *  Private helper — validate an IRQ position
+ *  Private helper â€” validate an IRQ position
  * ===================================================================== */
 static MNVIC_ReturnType_t MNVIC_privateValidateIrq(MNVIC_IRQ_t Copy_Irq)
 {
     /* (u32) cast BEFORE the comparison: C enums are not type-safe and
        a negative int cast in from garbage passes a signed "> MAX"
-       test — but becomes huge in u32 arithmetic and fails here. */
+       test â€” but becomes huge in u32 arithmetic and fails here. */
     if ((u32)Copy_Irq > (u32)MNVIC_SPI4)
     {
         return MNVIC_INVALID_IRQ;
@@ -117,7 +117,7 @@ static MNVIC_ReturnType_t MNVIC_privateValidateIrq(MNVIC_IRQ_t Copy_Irq)
     if ((MNVIC_ValidIrqMask[(u32)Copy_Irq >> 5u]
          & (1uL << ((u32)Copy_Irq & 0x1Fu))) == 0u)
     {
-        return MNVIC_INVALID_IRQ;   /* family-layout hole — no such IRQ */
+        return MNVIC_INVALID_IRQ;   /* family-layout hole â€” no such IRQ */
     }
     return MNVIC_OK;
 }
@@ -133,12 +133,12 @@ MNVIC_ReturnType_t MNVIC_Init(void)
      *
      * AIRCR is WRITE-KEYED: bits 31:16 must carry 0x05FA on every
      * write or the whole write is SILENTLY ignored. The trap: on
-     * READ those bits return VECTKEYSTAT = 0xFA05 — NOT the write
+     * READ those bits return VECTKEYSTAT = 0xFA05 â€” NOT the write
      * key. A naive read-modify-write would write 0xFA05 back, the
      * write would be silently dropped, and the grouping would never
      * change. The mask-then-OR sequence is the correct pattern:
      *   1. read AIRCR (read-key 0xFA05 lands in [31:16])
-     *   2. keep only the low 16 bits — drops the read-key, preserves
+     *   2. keep only the low 16 bits â€” drops the read-key, preserves
      *      ENDIANNESS and the reset-control bits (all read 0 on a
      *      healthy part, so nothing dangerous is ever written back)
      *   3. OR in the WRITE key 0x05FA
@@ -153,7 +153,7 @@ MNVIC_ReturnType_t MNVIC_Init(void)
 
     /* Read-back verification: PRIGROUP must now read back as the
        config value. A write with a wrong key (the silent-ignore
-       failure class) leaves the old value — which becomes a loud
+       failure class) leaves the old value â€” which becomes a loud
        MNVIC_INIT_FAILED instead of a silently wrong grouping. */
     if (((MNVIC_SCB_AIRCR & MNVIC_AIRCR_PRIGROUP_MASK) >> MNVIC_AIRCR_PRIGROUP_POS)
         != (u32)MNVIC_PRIORITY_GROUPING)
@@ -163,7 +163,7 @@ MNVIC_ReturnType_t MNVIC_Init(void)
 
     Global_u8IsInitialized = 1u;
     return MNVIC_OK;
-    /* Note: this write is functionally idempotent — with the default
+    /* Note: this write is functionally idempotent â€” with the default
        16/0 config, reset PRIGROUP (0..2 all mean 16/0 on a 4-bit
        part) and the programmed value (3) give the identical split.
        Init exists to make the register EXPLICITLY match the model,
@@ -171,11 +171,11 @@ MNVIC_ReturnType_t MNVIC_Init(void)
 }
 
 /* =====================================================================
- *  Enable / disable — ISER / ICER
+ *  Enable / disable â€” ISER / ICER
  *
  *  Write-1-to-set / write-1-to-clear, one-hot direct store. A single
  *  transaction; bits written 0 are untouched. Note the semantics on
- *  disable: the pending state is NOT cleared — a disabled-but-pending
+ *  disable: the pending state is NOT cleared â€” a disabled-but-pending
  *  IRQ fires on re-enable (ClearPending first if that is unwanted).
  * ===================================================================== */
 MNVIC_ReturnType_t MNVIC_EnableInterrupt(MNVIC_IRQ_t Copy_Irq)
@@ -199,11 +199,11 @@ MNVIC_ReturnType_t MNVIC_DisableInterrupt(MNVIC_IRQ_t Copy_Irq)
 }
 
 /* =====================================================================
- *  Pending state — ISPR (set) / ICPR (clear)
+ *  Pending state â€” ISPR (set) / ICPR (clear)
  *
  *  Software-set pending is indistinguishable to the NVIC from the
  *  peripheral asserting its line: the handler runs once enabled.
- *  ClearPending discards a latched event — the right call before
+ *  ClearPending discards a latched event â€” the right call before
  *  enabling an IRQ whose peripheral flag may already be set (the
  *  MEXTI "stale flag fires immediately on enable" trap).
  * ===================================================================== */
@@ -243,7 +243,7 @@ MNVIC_ReturnType_t MNVIC_GetPending(MNVIC_IRQ_t Copy_Irq, u8 *Copy_pu8Pending)
 }
 
 /* =====================================================================
- *  Active state — IABR (read-only)
+ *  Active state â€” IABR (read-only)
  *
  *  Hardware sets the bit on exception ENTRY and clears it on EXIT:
  *  reading it from inside the handler itself returns 1 (the classic
@@ -269,14 +269,14 @@ MNVIC_ReturnType_t MNVIC_GetActive(MNVIC_IRQ_t Copy_Irq, u8 *Copy_pu8Active)
  *  MNVIC_SetPriority
  *
  *  The REV 2 collapse: with grouping fixed at compile time, the whole
- *  five-case switch becomes ONE formula —
+ *  five-case switch becomes ONE formula â€”
  *      byte = (group << (1 + PRIGROUP)) | (sub << 4)
  *  because the group field's start bit is 8 - GROUP_BITS = 1 + the
  *  PRIGROUP encoding itself. Verified by _Static_asserts above.
  *
  *  The direct full-byte store replaces the old RMW: the &= 0xF only
  *  preserved unimplemented bits (which read as zero), so the RMW
- *  accomplished nothing. A single byte store is atomic — safe even
+ *  accomplished nothing. A single byte store is atomic â€” safe even
  *  if called from an ISR.
  * ===================================================================== */
 MNVIC_ReturnType_t MNVIC_SetPriority(MNVIC_IRQ_t Copy_Irq,
@@ -288,17 +288,17 @@ MNVIC_ReturnType_t MNVIC_SetPriority(MNVIC_IRQ_t Copy_Irq,
     }
 
     /* Gated: before Init, AIRCR still holds the reset grouping, which
-       may not match the config split — the byte would encode against
+       may not match the config split â€” the byte would encode against
        the WRONG field geometry. Nothing is written. */
     if (Global_u8IsInitialized == 0u)
     {
         return MNVIC_NOT_INITIALIZED;
     }
 
-    /* Range checks — the silent-truncation fix. The old code let an
+    /* Range checks â€” the silent-truncation fix. The old code let an
        out-of-range group wrap into the neighboring field (or into
-       nothing), which could land the IRQ at priority 0 — the MOST
-       urgent — with no diagnostic. Now: loud rejection. */
+       nothing), which could land the IRQ at priority 0 â€” the MOST
+       urgent â€” with no diagnostic. Now: loud rejection. */
     if (Copy_u8GroupPriority > MNVIC_GROUP_PRIORITY_MAX)
     {
         return MNVIC_INVALID_PARAM;
@@ -314,7 +314,7 @@ MNVIC_ReturnType_t MNVIC_SetPriority(MNVIC_IRQ_t Copy_Irq,
 }
 
 /* =====================================================================
- *  MNVIC_GetPriority — decode through the same compile-time split
+ *  MNVIC_GetPriority â€” decode through the same compile-time split
  * ===================================================================== */
 MNVIC_ReturnType_t MNVIC_GetPriority(MNVIC_IRQ_t Copy_Irq,
                                      u8 *Copy_pu8GroupPriority, u8 *Copy_pu8SubPriority)
@@ -340,18 +340,18 @@ MNVIC_ReturnType_t MNVIC_GetPriority(MNVIC_IRQ_t Copy_Irq,
 }
 
 /* =====================================================================
- *  MNVIC_TriggerIRQ — STIR
+ *  MNVIC_TriggerIRQ â€” STIR
  *
- *  Writing the IRQ position to STIR sets that IRQ pending — the
+ *  Writing the IRQ position to STIR sets that IRQ pending â€” the
  *  software equivalent of the peripheral asserting its line. This is
  *  how interrupt handlers get tested with ZERO hardware: enable
  *  MNVIC_EXTI0 with a test handler, call TriggerIRQ(MNVIC_EXTI0),
  *  and the handler executes without any button existing. (The
- *  peripheral's own mask is bypassed entirely — NVIC enable +
+ *  peripheral's own mask is bypassed entirely â€” NVIC enable +
  *  pending is sufficient for exception activation.)
  *
  *  STIR is privileged-writable by default (unprivileged access
- *  faults unless SCB CCR.USERSETMPEND is set — this driver never
+ *  faults unless SCB CCR.USERSETMPEND is set â€” this driver never
  *  touches CCR; bare-metal super-loop code runs privileged).
  * ===================================================================== */
 MNVIC_ReturnType_t MNVIC_TriggerIRQ(MNVIC_IRQ_t Copy_Irq)
@@ -393,7 +393,7 @@ MNVIC_ReturnType_t MNVIC_SetVectorTableBase(u32 Copy_u32Address)
 }
 
 /* =====================================================================
- *  MNVIC_SystemReset  (Rev 3, FOTA) — NEVER RETURNS
+ *  MNVIC_SystemReset  (Rev 3, FOTA) â€” NEVER RETURNS
  * ===================================================================== */
 void MNVIC_SystemReset(void)
 {
@@ -410,7 +410,7 @@ void MNVIC_SystemReset(void)
     MNVIC_SCB_AIRCR = Local_u32Aircr;
 
     /* Reset arrives a few cycles later. DSB guarantees the store
-       completed; then wait forever — if the reset is somehow blocked
+       completed; then wait forever â€” if the reset is somehow blocked
        (debugger holding reset), this loop is where we stay. */
     asm("DSB");
     while (1)

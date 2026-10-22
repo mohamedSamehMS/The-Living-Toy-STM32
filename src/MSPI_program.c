@@ -207,7 +207,7 @@ u16 MSPI_u16SendReceiveByteBlocking(volatile SPI_t *Copy_SPIx, u16 Copy_u16Data)
  * ========================================================================= */
 
 /* NVIC NOTE (new MNVIC driver):
- * This driver enables its own NVIC IRQ internally (below) — but it does NOT
+ * This driver enables its own NVIC IRQ internally (below) â€” but it does NOT
  * set a priority. Until the application sets one, the SPI IRQ sits at the
  * IPR reset value 0 = HIGHEST priority, and will pre-empt the EXTI button
  * and USART1 (ESP8266) handlers mid-transfer. Per MNVIC's boot-order
@@ -216,7 +216,7 @@ u16 MSPI_u16SendReceiveByteBlocking(volatile SPI_t *Copy_SPIx, u16 Copy_u16Data)
  *      MNVIC_SetPriority(MNVIC_SPI1, 4, 0);   // suggested plan: SPI = 4
  * IPR is writable while the IRQ is still disabled, so app-init ordering
  * works: the MNVIC_EnableInterrupt() calls below only ever turn the line
- * on — they never need to know the priority.
+ * on â€” they never need to know the priority.
  * (Re-arming a transfer re-enables an already-enabled IRQ: ISER is
  * write-1-to-set, so the repeat write is harmless.)
  * ========================================================================= */
@@ -228,7 +228,7 @@ void MSPI_voidSendBufferNonBlocking(volatile SPI_t *Copy_SPIx, void *Copy_pvoidB
     MNVIC_ReturnType_t Local_EnumNVICStatus = MNVIC_OK;
 
     // NVIC ADJUSTMENT: typed MNVIC_IRQ_t enum replaces the raw position
-    // numbers (35 / 36 / 51) — the "is SPI1 35 or 36?" bug class is now
+    // numbers (35 / 36 / 51) â€” the "is SPI1 35 or 36?" bug class is now
     // impossible to write, and the enum values are _Static_assert-pinned
     // to startup_stm32f401xc.s in MNVIC_program.c.
     if (Copy_SPIx == MSPI1)        { Local_State = &MSPI1_TxState; Local_EnumNVICStatus = MNVIC_EnableInterrupt(MNVIC_SPI1); }
@@ -237,7 +237,7 @@ void MSPI_voidSendBufferNonBlocking(volatile SPI_t *Copy_SPIx, void *Copy_pvoidB
     else return;
 
     // NVIC ADJUSTMENT: if the enable failed, the ISR can never run and this
-    // transfer would hang forever with zero diagnostics — abort BEFORE
+    // transfer would hang forever with zero diagnostics â€” abort BEFORE
     // arming any transfer state.
     if (Local_EnumNVICStatus != MNVIC_OK) return;
 
@@ -274,7 +274,7 @@ void MSPI_voidReceiveBufferNonBlocking(volatile SPI_t *Copy_SPIx, void *Copy_pvo
     else if (Copy_SPIx == MSPI3)   { Local_State = &MSPI3_RxState; Local_EnumNVICStatus = MNVIC_EnableInterrupt(MNVIC_SPI3); }
     else return;
 
-    // NVIC ADJUSTMENT: abort before arming state — see TX path rationale.
+    // NVIC ADJUSTMENT: abort before arming state â€” see TX path rationale.
     if (Local_EnumNVICStatus != MNVIC_OK) return;
 
     Local_State->Buffer = Copy_pvoidBuffer;

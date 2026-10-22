@@ -1,8 +1,8 @@
 /*
- * HESP_program.c � ESP8266 link HAL (L1 v1), implementation.
+ * HESP_program.c - ESP8266 link HAL (L1 v1), implementation.
  *
  *  SECTION 1 (RX transport) and SECTION 3 (TX builder): adopted
- *  VERBATIM from the validated link bench � deliverables 1 & 3 �
+ *  VERBATIM from the validated link bench - deliverables 1 & 3 -
  *  with Patch 0 (junk announcements), the D10 separator fix, and
  *  Patch B (junk content) folded into the assembler, plus the D18
  *  stuck-line flush (30 ms). The invariant comments stay (see
@@ -11,18 +11,18 @@
  *  SECTION 2 (public plumbing): counters, handler setters, the
  *  TransportInit integration patch, Patch A (HESP_TxSnapshot).
  *
- *  FOTA-CS (this revision): the carrier extension � the router in
+ *  FOTA-CS (this revision): the carrier extension - the router in
  *  TransportPoll's drain (binary mode -> raw handler instead of the
  *  assembler; placed BEFORE Assemble so the line state never moves
  *  and D18 self-disables), the D18 explicit gate, the raw-handler /
  *  binary-mode state, the public raw TX, the last-byte getter.
- *  The ISR and the ring are UNTOUCHED � byte-agnostic by design.
+ *  The ISR and the ring are UNTOUCHED - byte-agnostic by design.
  *
- *  No MUSART register access anywhere � HESP is a pure consumer.
+ *  No MUSART register access anywhere - HESP is a pure consumer.
  */
 
 #include <MCAL/USART/MUSART_interface.h>
-#include <MCAL/SYSTICK/MSYSTICK_interface.h>   /* D18: flush timebase � the
+#include <MCAL/SYSTICK/MSYSTICK_interface.h>   /* D18: flush timebase - the
                                                    getter is a non-blocking
                                                    counter read, ISR-safe per
                                                    the driver contract        */
@@ -31,7 +31,7 @@
 #include "HAL/ESP/HESP_private.h"
 #include "HAL/ESP/HESP_config.h"
 /* ================================================================= *
- *  SECTION 1 � RX TRANSPORT  [BENCH, adopted verbatim + Patches 0/B *
+ *  SECTION 1 - RX TRANSPORT  [BENCH, adopted verbatim + Patches 0/B *
  *                              + D5 resync fix + D18 flush]           *
  * ================================================================= */
 
@@ -48,25 +48,25 @@ static HESP_LineHandler_t HespHandler     = NULL;
 static HESP_JunkHandler_t HespJunkHandler = NULL;   /* Patch 0      */
 static volatile u32  HespLastByteMs = 0u;  /* D18: last RX byte time,
                                               written in ISR, read in
-                                              loop � aligned u32 is
+                                              loop - aligned u32 is
                                               atomic (invariant 1)    */
 
-/* FOTA-CS: the carrier-extension state. LOOP context only � written
+/* FOTA-CS: the carrier-extension state. LOOP context only - written
    from NET's parser/task, read in TransportPoll's drain. No ISR
    contact, no volatile needed (single context, the TX-state
-   discipline � NOT the RX ring's). */
+   discipline - NOT the RX ring's). */
 static HESP_RawByteHandler_t HespRawHandler = NULL;
 static u8                    HespBinaryMode = 0u;
 
-/* ---- ISR CONTEXT (MUSART calls per received byte) � invariant 3 --- */
+/* ---- ISR CONTEXT (MUSART calls per received byte) - invariant 3 --- */
 static void HESP_RxByteCallback(u8 Copy_u8Byte)
 {
     u16 Local_u16Next = (u16)((HespHead + 1u) & HESP_RING_MASK);
 
-    HespLastByteMs = MSYSTICK_GetElapsed_ms();   /* D18 � counter read,
+    HespLastByteMs = MSYSTICK_GetElapsed_ms();   /* D18 - counter read,
                                                     ISR-safe, non-blocking.
                                                     FOTA-CS: unchanged in
-                                                    binary mode � this is
+                                                    binary mode - this is
                                                     NET's watchdog clock */
 
     if (Local_u16Next != HespTail)          /* room available */
@@ -81,20 +81,20 @@ static void HESP_RxByteCallback(u8 Copy_u8Byte)
     }
 }
 
-/* ---- ISR CONTEXT � diagnostic (invariant 7: '\n' is the boundary) -- */
+/* ---- ISR CONTEXT - diagnostic (invariant 7: '\n' is the boundary) -- */
 static void HESP_IdleCallback(void)
 {
     HespIdleTicks++;
 }
 /* ---- LOOP CONTEXT: byte -> line assembler --------------------------
  * '\n' ends a frame; one trailing '\r' stripped; empty lines skipped;
- * over-length (cap 192 / content > 158) junked � invariant 6.
+ * over-length (cap 192 / content > 158) junked - invariant 6.
  *
  * F1 FOLD: a line of exactly "\r\n" was DELIVERED to
  * the line handler as a zero-length line. Invariant 6 says empty
  * lines are skipped; the bare-'\n' case is, the '\r'-then-'\n' case
- * was not. Fix: skip content-empty lines AFTER the strip � no handler
- * call, no junk count, silently uncounted � matching the ESP-side
+ * was not. Fix: skip content-empty lines AFTER the strip - no handler
+ * call, no junk count, silently uncounted - matching the ESP-side
  * rxLen==0 semantics (countersigned by both seats). Proof trio:
  * J3 "\r\n" -> nothing; W1 " \r\n" -> junk len=1 (whitespace-only is
  * NOT empty); P3 "A\r\r\n" -> junk len=2 (exactly ONE '\r' stripped).
@@ -109,7 +109,7 @@ static u8 HESP_Assemble(u8 Copy_u8Byte)
             HespJunkLines++;
             if (HespJunkHandler != NULL) { HespJunkHandler(HespLine, HespLineLen); }
             HespOverflow = 0u;
-            HespLineLen  = 0u;   /* D5 � post-junk resync (J2->V9 pair) */
+            HespLineLen  = 0u;   /* D5 - post-junk resync (J2->V9 pair) */
         }
         else if (HespLineLen != 0u)          /* non-empty line (F2 label) */
         {
@@ -128,7 +128,7 @@ static u8 HESP_Assemble(u8 Copy_u8Byte)
                 {   HespHandler(HespLine, HespLineLen);   }
                 Local_u8LineReady = 1u;
             }
-            /* else: len==0 after strip � skipped like the bare '\n'   */
+            /* else: len==0 after strip - skipped like the bare '\n'   */
             HespLineLen = 0u;
         }
         else                                 /* empty line: skip (F2) */
@@ -158,10 +158,10 @@ void HESP_TransportPoll(void)
 
         /* FOTA-CS: THE ROUTER. While binary mode is on AND a raw
            handler is registered, every drained byte goes to the raw
-           consumer INSTEAD of the assembler � the bracket's whole
+           consumer INSTEAD of the assembler - the bracket's whole
            mechanism. Placed BEFORE Assemble so the line state never
            moves in binary mode (D18 self-disables by construction).
-           NULL handler = the flag is inert � normal text behavior
+           NULL handler = the flag is inert - normal text behavior
            (the safe pre-integration default). Loop context (the
            FOTA-12 ruling): the handler may narrate on the console. */
         if ((HespBinaryMode != 0u) && (HespRawHandler != NULL))
@@ -179,7 +179,7 @@ void HESP_TransportPoll(void)
        short, a torn frame): junk it and reset, so the NEXT frame starts
        clean. '\n' remains THE protocol boundary: this only retires
        lines that are already dead. FOTA-CS: explicitly gated on TEXT
-       mode � belt-and-braces (the router already starves the line
+       mode - belt-and-braces (the router already starves the line
        state in binary mode; this makes the gate visible, not implied). */
     if (  (HespBinaryMode == 0u)
        && (  (HespLineLen != 0u) || (HespOverflow != 0u) )
@@ -198,13 +198,13 @@ void HESP_DebugInjectByte(u8 Copy_u8Byte)   /* TEST ONLY */
 #endif
 
 /* ================================================================= *
- *  SECTION 2 � public plumbing                                      *
+ *  SECTION 2 - public plumbing                                      *
  * ================================================================= */
 
 void HESP_SetJunkHandler(HESP_JunkHandler_t Copy_pfHandler)
 {   HespJunkHandler = Copy_pfHandler;   }
 
-/* FOTA-CS: the carrier-extension setters � the SetJunkHandler shape */
+/* FOTA-CS: the carrier-extension setters - the SetJunkHandler shape */
 void HESP_SetRawByteHandler(HESP_RawByteHandler_t Copy_pfHandler)
 {   HespRawHandler = Copy_pfHandler;   }
 
@@ -230,10 +230,10 @@ void HESP_TransportInit(MUSART_USART_t Copy_USART, HESP_LineHandler_t Copy_pfHan
 }
 
 /* ================================================================= *
- *  SECTION 3 � TX BUILDER  [BENCH, adopted verbatim + D10 fix]     *
- *  No volatile anywhere in TX state � loop context only, single
+ *  SECTION 3 - TX BUILDER  [BENCH, adopted verbatim + D10 fix]     *
+ *  No volatile anywhere in TX state - loop context only, single
  *  writer (contrast with the RX ring: invariant discipline differs
- *  BY DESIGN � do not copy RX's volatile here).
+ *  BY DESIGN - do not copy RX's volatile here).
  * ================================================================= */
 
 static u8              HespTxBuffer[HESP_TX_BUFFER_MAX];
@@ -243,7 +243,7 @@ static u8              HespTxPoisoned   = 0u;
 static MUSART_USART_t  HespTxLink       = (MUSART_USART_t)0u;
 static u8              HespTxLinkBound  = 0u;
 
-/* [BENCH] port � validated as Uart_SendString on the link bench  */
+/* [BENCH] port - validated as Uart_SendString on the link bench  */
 static void HESP_TxRawString(MUSART_USART_t Copy_USART, const char *Copy_pchText)
 {
     while (*Copy_pchText != '\0')
@@ -256,7 +256,7 @@ static void HESP_TxRawString(MUSART_USART_t Copy_USART, const char *Copy_pchText
     }
 }
 
-/* [BENCH] port � validated as Uart_SendBytes                      */
+/* [BENCH] port - validated as Uart_SendBytes                      */
 static void HESP_TxRawBytes(MUSART_USART_t Copy_USART, const u8 *Copy_pu8Data, u16 Copy_u16Length)
 {
     u16 Local_u16Index;
@@ -269,9 +269,9 @@ static void HESP_TxRawBytes(MUSART_USART_t Copy_USART, const u8 *Copy_pu8Data, u
     }
 }
 
-/* FOTA-CS: the public raw-TX � one byte on the bound link. The
+/* FOTA-CS: the public raw-TX - one byte on the bound link. The
    epoch's ACK/NAK path. Bind-checked; NO [TX] mirror (the documented
-   mirror gap � the receiver's USART2 narration is the epoch's bench
+   mirror gap - the receiver's USART2 narration is the epoch's bench
    evidence instead). */
 HESP_Error_t HESP_TxRawByte(u8 Copy_u8Byte)
 {
@@ -301,7 +301,7 @@ static u8 HESP_NameHasPrefix(const char *Copy_pchName, const char *Copy_pchPrefi
     return 1u;
 }
 
-/* [EXT] bounded append � POISONS on overflow instead of truncating.
+/* [EXT] bounded append - POISONS on overflow instead of truncating.
    A truncated frame on the wire is worse than a refused frame.     */
 static HESP_Error_t HESP_TxAppendChar(u8 Copy_u8Char)
 {
@@ -363,7 +363,7 @@ static HESP_Error_t HESP_TxAppendU16(u16 Copy_u16Value)
 
 /* Separator rule: FIRST field ':' (after TID, or after the name for
    EVENTs); every further field ','. The separator is appended
-   exactly once per field � THIS is the increment point (D10). */
+   exactly once per field - THIS is the increment point (D10). */
 static HESP_Error_t HESP_TxAppendSeparator(void)
 {
     HESP_Error_t Local_Error;
@@ -402,7 +402,7 @@ HESP_Error_t HESP_TxBegin(const char *Copy_pchName, u8 Copy_u8Tid)
         return HESP_TX_ARGS;
     }
 
-    /* Misuse guards � mirror the RECEIVER's classification rule    */
+    /* Misuse guards - mirror the RECEIVER's classification rule    */
     if (HESP_NameHasPrefix(Copy_pchName, "EVENT_") != 0u)
     {
         if (Copy_u8Tid != 0u)          /* EVENTs carry no TID */
@@ -439,7 +439,7 @@ HESP_Error_t HESP_TxBegin(const char *Copy_pchName, u8 Copy_u8Tid)
     return Local_Error;
 }
 
-/* F4 FOLD: the field-charset guard � refuse BEFORE any append. */
+/* F4 FOLD: the field-charset guard - refuse BEFORE any append. */
 HESP_Error_t HESP_TxFieldStr(const char *Copy_pchField)
 {
     HESP_Error_t Local_Error;
@@ -497,7 +497,7 @@ HESP_Error_t HESP_TxSend(void)
         return HESP_TX_ARGS;           /* nothing built             */
     }
 
-    /* CRLF lives OUTSIDE the content budget � direct writes. */
+    /* CRLF lives OUTSIDE the content budget - direct writes. */
     HespTxBuffer[HespTxLen]      = (u8)'\r';
     HespTxBuffer[HespTxLen + 1u] = (u8)'\n';
     HespTxLen = (u16)(HespTxLen + 2u);
@@ -526,12 +526,12 @@ HESP_Error_t HESP_TxSend(void)
     HESP_TxRawString(HESP_TX_MIRROR_USART, "\r\n");
 #endif
 
-    /* Always reset � next Begin starts clean whatever happened      */
+    /* Always reset - next Begin starts clean whatever happened      */
     HespTxLen = 0u;  HespTxFieldCount = 0u;  HespTxPoisoned = 0u;
     return Local_Error;
 }
 
-/* Patch A (D11 closure) � byte-true gate for the TX builder.      */
+/* Patch A (D11 closure) - byte-true gate for the TX builder.      */
 u16 HESP_TxSnapshot(u8 *Copy_pu8Out, u16 Copy_u16Max)
 {
     u16 Local_u16Index;
