@@ -1,4 +1,7 @@
-![ITI - Information Technology Institute](Docs/images/iti-logo-light.png)
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="Docs/images/iti-logo-light.png">
+  <img src="Docs/images/iti-logo-dark.png" alt="ITI - Information Technology Institute" width="260">
+</picture>
 
 *Built during the ITI ARM Embedded Systems Track — Summer Training*
 
@@ -132,7 +135,7 @@ The design rule: the game engine never touches internet protocols. The ESP owns 
 | arm-none-eabi-gcc | Cross compiler — `-mcpu=cortex-m4 -mthumb -mfloat-abi=softfp -mfpu=fpv4-sp-d16 -Og -ffunction-sections -fdata-sections` |
 | Host GCC | Per-file syntax checks (`-fsyntax-only`) before flashing |
 | SWD (ST-Link) | Flashing & debug |
-| PuTTY | Console (USART2) — banners, `[ST2]` health line, crash-log dumps |
+| PuTTY | Console (USART2) — banners, `[ST2]` health line |
 | Python | Cloud referee server, PC-side FOTA sender |
 
 ---
