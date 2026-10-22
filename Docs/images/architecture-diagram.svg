@@ -1,0 +1,54 @@
+<svg viewBox="0 0 1000 320" xmlns="http://www.w3.org/2000/svg" font-family="Segoe UI, Helvetica, Arial, sans-serif">
+  <defs>
+    <marker id="arrow2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#586069"/>
+    </marker>
+  </defs>
+
+  <rect x="0" y="0" width="1000" height="320" fill="#ffffff"/>
+
+  <!-- STM32 -->
+  <rect x="30" y="90" width="260" height="150" rx="8" fill="#e7f1ff" stroke="#3a7bd5" stroke-width="1.5"/>
+  <text x="160" y="125" text-anchor="middle" font-size="16" font-weight="700" fill="#1b3a63">STM32F401</text>
+  <text x="160" y="146" text-anchor="middle" font-size="11" fill="#3a5c85">FreeRTOS game engine</text>
+  <text x="160" y="172" text-anchor="middle" font-size="11" font-weight="600" fill="#1b3a63">4 games · hub/menus</text>
+  <text x="160" y="190" text-anchor="middle" font-size="11" fill="#3a5c85">audio synth · IR + buttons</text>
+  <text x="160" y="208" text-anchor="middle" font-size="10" fill="#7a8ba0">never touches internet protocols</text>
+
+  <!-- UART label -->
+  <line x1="290" y1="165" x2="400" y2="165" stroke="#586069" stroke-width="1.5" marker-end="url(#arrow2)"/>
+  <line x1="400" y1="177" x2="290" y2="177" stroke="#586069" stroke-width="1.5" marker-end="url(#arrow2)"/>
+  <text x="345" y="130" text-anchor="middle" font-size="10" fill="#586069">3-wire UART</text>
+  <text x="345" y="143" text-anchor="middle" font-size="9" fill="#8a94a0">115,200 baud</text>
+  <text x="345" y="200" text-anchor="middle" font-size="9" fill="#8a94a0">133-B frames</text>
+  <text x="345" y="213" text-anchor="middle" font-size="9" fill="#8a94a0">1 seq+128 data+4 CRC</text>
+
+  <!-- ESP8266 -->
+  <rect x="400" y="90" width="200" height="150" rx="8" fill="#fff4e5" stroke="#e1922f" stroke-width="1.5"/>
+  <text x="500" y="125" text-anchor="middle" font-size="16" font-weight="700" fill="#7a4a0c">ESP8266</text>
+  <text x="500" y="146" text-anchor="middle" font-size="11" fill="#8a5e1f">WiFi relay</text>
+  <text x="500" y="172" text-anchor="middle" font-size="11" font-weight="600" fill="#7a4a0c">text ⇄ JSON</text>
+  <text x="500" y="190" text-anchor="middle" font-size="10" fill="#8a5e1f">TLS / WebSockets owner</text>
+  <text x="500" y="208" text-anchor="middle" font-size="10" fill="#a67e3d">translates, never interprets</text>
+
+  <!-- WiFi label -->
+  <line x1="600" y1="165" x2="720" y2="165" stroke="#586069" stroke-width="1.5" marker-end="url(#arrow2)"/>
+  <line x1="720" y1="177" x2="600" y2="177" stroke="#586069" stroke-width="1.5" marker-end="url(#arrow2)"/>
+  <text x="660" y="130" text-anchor="middle" font-size="10" fill="#586069">WiFi / TLS</text>
+  <text x="660" y="143" text-anchor="middle" font-size="9" fill="#8a94a0">WebSocket</text>
+  <text x="660" y="200" text-anchor="middle" font-size="9" fill="#8a94a0">outbound-only</text>
+  <text x="660" y="213" text-anchor="middle" font-size="9" fill="#8a94a0">survives double-NAT</text>
+
+  <!-- Cloud server -->
+  <rect x="720" y="90" width="250" height="150" rx="8" fill="#e9f7ef" stroke="#2f9e5b" stroke-width="1.5"/>
+  <text x="845" y="125" text-anchor="middle" font-size="16" font-weight="700" fill="#1d6b3d">Python Cloud Server</text>
+  <text x="845" y="146" text-anchor="middle" font-size="11" fill="#2f7d4f">Match referee + FOTA source</text>
+  <text x="845" y="172" text-anchor="middle" font-size="11" font-weight="600" fill="#1d6b3d">validates every move</text>
+  <text x="845" y="190" text-anchor="middle" font-size="10" fill="#3a8a5f">4-letter room codes, reconnect grace</text>
+  <text x="845" y="208" text-anchor="middle" font-size="10" fill="#3a8a5f">serves the FOTA manifest + stream</text>
+
+  <!-- Rule callout -->
+  <rect x="160" y="260" width="680" height="45" rx="6" fill="#fafafa" stroke="#d0d7de" stroke-width="1"/>
+  <text x="500" y="278" text-anchor="middle" font-size="11" font-weight="600" fill="#24292f">One link carries both game traffic and firmware updates.</text>
+  <text x="500" y="294" text-anchor="middle" font-size="11" fill="#24292f">Complexity and attack surface live in exactly one place each: STM32 → text · ESP8266 → TLS/JSON · server → truth.</text>
+</svg>
