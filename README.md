@@ -1,8 +1,7 @@
 <picture>
-  <source media="(prefers-color-scheme: dark)" srcset="Docs/images/iti-logo-light.png">
-  <img src="Docs/images/iti-logo-dark.png" alt="ITI - Information Technology Institute" width="260">
+  <source media="(prefers-color-scheme: dark)" srcset="Docs/images/iti-logo-dark.png">
+  <img src="Docs/images/iti-logo-light.png" alt="ITI - Information Technology Institute" width="260">
 </picture>
-
 *Built during the ITI ARM Embedded Systems Track — Summer Training*
 
 # The Living Toy
