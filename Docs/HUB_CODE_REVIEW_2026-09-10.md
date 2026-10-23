@@ -1,3 +1,5 @@
+  > **Historical document (2026-09-10).** The critical findings below were fixed by 2026-09-15; `main.c` now boots the hub.
+
 # Hub code review — architecture audit and status verification
 
 Scope: source and checked-in generated build manifests only. No source was modified.

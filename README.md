@@ -381,7 +381,7 @@ The standing lesson, earned three times: structural audits prove what code can't
 ## 13. Repository Structure
 
 ```text
-EM_SYS_ARM_PROJECT/
+the-living-toy-stm32/
 ├── include/
 │   ├── MCAL/           # 10 drivers, 4-file pattern (config/private/interface)
 │   │   ├── RCC/ GPIO/ NVIC/ EXTI/ SPI/ USART/ SYSTICK/ TIM/ FLS/ CRC/
@@ -393,17 +393,17 @@ EM_SYS_ARM_PROJECT/
 │   ├── MRCC_program.c, MGPIO_program.c, MNVIC_program.c, MEXTI_program.c,
 │   ├── MSPI_program.c, MUSART_program.c, MTIM_program.c, MFLS_program.c, MCRC_program.c
 │   ├── MSYSTICK_shim.c          # the kernel-tick shim (old driver excluded)
-│   ├── HTFT_program.c, HNEC_REMOTE_program.c, HBUZZER_program.c,
+│   ├── HTFT_program.c, HNEC_REMOTE_program.c, HIR_program.c, HBUZZER_program.c,
 │   ├── HAUDIO_program.c, HESP_program.c, HBUTTONS_program.c
 │   ├── APP/
 │   │   ├── HUB_program.c, HUB_menu.c, HUB_renderer.c
 │   │   ├── APP_SNAKE.c, APP_TTT.c, APP_MATHQ.c, APP_MM.c
+│   │   ├── SNAKE_renderer.c, TTT_renderer.c, MATHQ_renderer.c, MM_renderer.c
 │   │   ├── APP_INPUT.c, APP_STORE.c
 │   │   ├── NET_program.c, TTT_session.c, TTT_app.c
 │   │   └── APP_FOTA.c, APP_FOTA_APP.c, APP_FOTA_NET.c, APP_FOTA_UI.c
-│   ├── OS/              # tasks.c, queue.c, list.c, port.c, heap_4.c
-│   ├── main.c
-│   └── *_renderer.c    # per-game renderers
+│   ├── OS/              # tasks.c, queue.c, list.c, port.c, heap_4.c, timers.c
+│   └── main.c
 ├── system/             # template: cmsis, newlib (fenced), cortexm, startup
 ├── ldscripts/          # mem.ld, libs.ld, sections.ld
 ├── Docs/               # code-review audit trail, diagrams

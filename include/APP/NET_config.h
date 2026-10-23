@@ -58,7 +58,7 @@
    The tie has arrived (FOTA-13's flag): this must MATCH
    APP_BUILD_VERSION_STR in main.c - the notify's version compare
    consumes this truth at the hub. Bump per versioned image. */
-#define NET_FW_ID               "14.0.0"   /* the absorption build - the
+#define NET_FW_ID               "14.4.0"   /* the absorption build - the
                                               versioned-image rule (ties to
                                               APP_BUILD_VERSION_STR in main) */
 
